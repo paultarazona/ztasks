@@ -1,11 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from './useAuthStore'
 import * as notesService from '../services/notesService'
-import type { TaskNote } from '../types'
 
 export function useTaskNotes(taskId?: string) {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
 
   const query = useQuery({
     queryKey: ['task_notes', taskId, userId],
@@ -15,7 +20,7 @@ export function useTaskNotes(taskId?: string) {
 
   const createNote = useMutation({
     mutationFn: async (input: { task_id: string; content: string }) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return notesService.createNote({ ...input, user_id: currentUserId })
     },
     onSuccess: () => {
@@ -25,7 +30,7 @@ export function useTaskNotes(taskId?: string) {
 
   const updateNote = useMutation({
     mutationFn: async ({ id, content }: { id: string; content: string }) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return notesService.updateNote(id, currentUserId, content)
     },
     onSuccess: () => {
@@ -35,7 +40,7 @@ export function useTaskNotes(taskId?: string) {
 
   const deleteNote = useMutation({
     mutationFn: async (id: string) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return notesService.deleteNote(id, currentUserId)
     },
     onSuccess: () => {

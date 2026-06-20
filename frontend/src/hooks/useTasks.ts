@@ -31,6 +31,12 @@ export function useTasks(categoryId?: string) {
   const userId = useAuthStore((s) => s.user?.id)
   const queryKey = useMemo(() => ['tasks', categoryId, userId] as const, [categoryId, userId])
 
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
+
   useEffect(() => {
     if (!categoryId || !userId) return
 
@@ -78,7 +84,7 @@ export function useTasks(categoryId?: string) {
 
   const createTask = useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return tasksService.createTask({ ...input, user_id: currentUserId })
     },
     onSuccess: (task) => {
@@ -93,7 +99,7 @@ export function useTasks(categoryId?: string) {
 
   const updateTask = useMutation({
     mutationFn: async ({ id, ...input }: UpdateTaskInput) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return tasksService.updateTask({ id, user_id: currentUserId, ...input })
     },
     onMutate: async ({ id, ...input }) => {
@@ -120,7 +126,7 @@ export function useTasks(categoryId?: string) {
 
   const deleteTask = useMutation({
     mutationFn: async (id: string) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       await tasksService.deleteTask(id, currentUserId)
     },
     onMutate: async (id) => {

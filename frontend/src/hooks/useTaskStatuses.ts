@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useAuthStore } from './useAuthStore'
 import * as taskStatusesService from '../services/taskStatusesService'
-import type { TaskStatus } from '../types'
 
 let globalSeedPending = false
 

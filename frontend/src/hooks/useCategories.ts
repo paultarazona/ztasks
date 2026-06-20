@@ -7,6 +7,12 @@ export function useCategories() {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
 
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
+
   const query = useQuery({
     queryKey: ['categories', userId],
     queryFn: () => categoriesService.getCategories(userId!),
@@ -15,7 +21,7 @@ export function useCategories() {
 
   const createCategory = useMutation({
     mutationFn: async (input: { name: string; color?: string; parent_id?: string | null; type?: 'folder' | 'list' }) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return categoriesService.createCategory({ ...input, user_id: currentUserId })
     },
     onSuccess: () => {
@@ -25,7 +31,7 @@ export function useCategories() {
 
   const updateCategory = useMutation({
     mutationFn: async ({ id, ...input }: { id: string; name?: string; color?: string | null; parent_id?: string | null }) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return categoriesService.updateCategory({ id, user_id: currentUserId, ...input })
     },
     onSuccess: () => {
@@ -39,7 +45,7 @@ export function useCategories() {
       rootId: string
       deletedAs: 'tree' | 'folder' | 'list'
     }) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return categoriesService.deleteCategory({
         ids: input.ids,
         rootId: input.rootId,
@@ -61,6 +67,12 @@ export function useTrashCategories() {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
 
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
+
   const query = useQuery({
     queryKey: ['trash-categories', userId],
     queryFn: () => categoriesService.getTrashCategories(userId!),
@@ -69,7 +81,7 @@ export function useTrashCategories() {
 
   const restoreCategory = useMutation({
     mutationFn: async (ids: string[]) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return categoriesService.restoreCategory(ids, currentUserId)
     },
     onSuccess: () => {
@@ -80,7 +92,7 @@ export function useTrashCategories() {
 
   const permanentDelete = useMutation({
     mutationFn: async (ids: string[]) => {
-      const currentUserId = useAuthStore.getState().user?.id!
+      const currentUserId = getCurrentUserId()
       return categoriesService.permanentDeleteCategory(ids, currentUserId)
     },
     onSuccess: () => {

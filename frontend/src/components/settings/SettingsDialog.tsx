@@ -78,7 +78,7 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
         name: name.trim() || null,
         avatar_url: avatarUrl.trim() || null,
       })
-      updateProfile(data ?? { name: name.trim(), avatar_url: avatarUrl.trim() })
+      updateProfile({ ...data })
       setMessage('Perfil actualizado.')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el perfil.')

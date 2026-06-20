@@ -118,6 +118,8 @@ export function subscribe(
   _channel: string,
   _handlers: Record<string, (payload: unknown) => void>,
 ): () => void {
+  void _channel
+  void _handlers
   // Slice 5 will wire this to EventSource
   return () => {}
 }

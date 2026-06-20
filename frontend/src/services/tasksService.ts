@@ -2,6 +2,7 @@
  * tasksService — Slice 1 stub.
  * Forwards to InsForge internally. Slice 4 will replace with real apiClient calls.
  */
+import { api } from '../lib/apiClient'
 import { insforge } from '../lib/insforge'
 import type { Task, Priority, TaskStatus } from '../types'
 
@@ -31,16 +32,14 @@ export interface ReorderTasksInput {
   updates: Array<{ id: string; position: number }>
 }
 
-export async function getTasksByCategory(userId: string, categoryId: string): Promise<Task[]> {
-  const { data, error } = await insforge
-    .database.from('tasks')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('category_id', categoryId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data as Task[]
+export async function getTasksByCategory(categoryId: string): Promise<Task[]>
+export async function getTasksByCategory(_userId: string, categoryId: string): Promise<Task[]>
+export async function getTasksByCategory(
+  userIdOrCategoryId: string,
+  maybeCategoryId?: string,
+): Promise<Task[]> {
+  const categoryId = maybeCategoryId ?? userIdOrCategoryId
+  return api<Task[]>('GET', `/tasks?categoryId=${encodeURIComponent(categoryId)}`)
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
@@ -79,9 +78,11 @@ export async function deleteTask(id: string, userId: string): Promise<void> {
 }
 
 export async function reorderTasks(
-  _userId: string,
-  _updates: Array<{ id: string; position: number }>,
+  userId: string,
+  updates: Array<{ id: string; position: number }>,
 ): Promise<void> {
+  void userId
+  void updates
   // Stub: reorder is handled client-side via optimistic updates in Slice 1.
   // Slice 4 will call PATCH /tasks/:id for each update.
 }

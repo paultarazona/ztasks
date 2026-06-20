@@ -1,4 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Task } from '../types'
+import { api } from '../lib/apiClient'
+
+vi.mock('../lib/apiClient', () => ({
+  api: vi.fn(),
+}))
 
 vi.mock('../lib/insforge', () => ({
   insforge: {
@@ -11,43 +17,39 @@ vi.mock('../lib/insforge', () => ({
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      in: vi.fn().mockReturnThis(),
     },
   },
 }))
 
+const apiMock = vi.mocked(api)
+
 describe('tasksService', () => {
   beforeEach(() => {
-    vi.resetModules()
+    vi.clearAllMocks()
   })
 
-  it('exports getTasksByCategory function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.getTasksByCategory).toBe('function')
-  })
+  it('gets tasks by category through apiClient', async () => {
+    const tasks = [
+      {
+        id: 'task-1',
+        user_id: 'user-1',
+        category_id: 'category-1',
+        status_id: 'status-1',
+        title: 'Task 1',
+        description: null,
+        priority: 'medium',
+        due_date: null,
+        created_at: '2026-06-20T00:00:00.000Z',
+        updated_at: '2026-06-20T00:00:00.000Z',
+      },
+    ] satisfies Task[]
+    apiMock.mockResolvedValueOnce(tasks)
 
-  it('exports createTask function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.createTask).toBe('function')
-  })
+    const { getTasksByCategory } = await import('./tasksService')
 
-  it('exports updateTask function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.updateTask).toBe('function')
-  })
+    const getTasks = getTasksByCategory as (categoryId: string) => Promise<Task[]>
 
-  it('exports deleteTask function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.deleteTask).toBe('function')
-  })
-
-  it('exports reorderTasks function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.reorderTasks).toBe('function')
-  })
-
-  it('exports getPendingTaskCounts function', async () => {
-    const mod = await import('./tasksService')
-    expect(typeof mod.getPendingTaskCounts).toBe('function')
+    await expect(getTasks('category-1')).resolves.toEqual(tasks)
+    expect(apiMock).toHaveBeenCalledWith('GET', '/tasks?categoryId=category-1')
   })
 })

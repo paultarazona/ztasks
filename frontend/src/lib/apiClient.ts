@@ -39,7 +39,9 @@ export async function api<T = unknown>(
     try {
       const payload = await response.json()
       if (typeof payload?.message === 'string') message = payload.message
+      if (typeof payload?.error === 'string') message = payload.error
       if (typeof payload?.code === 'string') code = payload.code
+      if (payload?.fields !== undefined) details = payload.fields
       if (payload?.details !== undefined) details = payload.details
     } catch {
       // JSON parse failed — keep defaults

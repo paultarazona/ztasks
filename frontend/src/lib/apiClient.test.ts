@@ -31,6 +31,31 @@ describe('apiClient', () => {
       })
     })
 
+    it('normalizes backend error payloads that use error and fields', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: async () => ({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          fields: { title: 'required' },
+        }),
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      const { api, ApiError } = await import('./apiClient')
+
+      await expect(api('POST', '/tasks', { title: '' })).rejects.toSatisfy((err: unknown) => {
+        if (!(err instanceof ApiError)) return false
+        return (
+          err.status === 422 &&
+          err.code === 'VALIDATION_ERROR' &&
+          err.message === 'Validation failed' &&
+          JSON.stringify(err.details) === JSON.stringify({ title: 'required' })
+        )
+      })
+    })
+
     it('throws ApiError on 5xx response', async () => {
       const fetchMock = vi.fn().mockResolvedValue({
         ok: false,

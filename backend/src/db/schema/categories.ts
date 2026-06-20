@@ -1,0 +1,12 @@
+import { pgTable, serial, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core'
+
+export const categories = pgTable('categories', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  name: text('name').notNull(),
+  color: text('color'),
+  position: integer('position'),
+  isDeleted: boolean('is_deleted').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})

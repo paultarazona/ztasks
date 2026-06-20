@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Task } from '../types'
-import { api } from '../lib/apiClient'
+import { ApiError } from '../lib/errors'
 
-vi.mock('../lib/apiClient', () => ({
-  api: vi.fn(),
-}))
+vi.mock('../lib/apiClient', async () => {
+  const { ApiError } = await import('../lib/errors')
+  return {
+    api: vi.fn(),
+    ApiError,
+  }
+})
 
 vi.mock('../lib/insforge', () => ({
   insforge: {
@@ -21,7 +25,11 @@ vi.mock('../lib/insforge', () => ({
   },
 }))
 
+import { api } from '../lib/apiClient'
+
 const apiMock = vi.mocked(api)
+
+void ApiError // referenced to ensure import is used
 
 const task = {
   id: 'task-1',
@@ -112,5 +120,31 @@ describe('tasksService', () => {
     ).resolves.toBeUndefined()
     expect(apiMock).toHaveBeenNthCalledWith(1, 'PATCH', '/tasks/task-1/reorder', { position: 1 })
     expect(apiMock).toHaveBeenNthCalledWith(2, 'PATCH', '/tasks/task-2/reorder', { position: 2 })
+  })
+
+  it('createTask propagates ApiError on failure', async () => {
+    apiMock.mockRejectedValueOnce(new ApiError('Unauthorized', 401, 'UNAUTHORIZED'))
+
+    const { createTask } = await import('./tasksService')
+
+    await expect(
+      createTask({
+        user_id: 'user-1',
+        category_id: 'cat-1',
+        status_id: 'status-1',
+        title: 'Fail task',
+      }),
+    ).rejects.toThrow('Unauthorized')
+  })
+
+  it('getPendingTaskCounts calls GET /tasks/pending-counts', async () => {
+    const counts = { tasks: [], statuses: [] }
+    apiMock.mockResolvedValueOnce(counts)
+
+    const { getPendingTaskCounts } = await import('./tasksService')
+    const result = await getPendingTaskCounts('user-1')
+
+    expect(apiMock).toHaveBeenCalledWith('GET', '/tasks/pending-counts')
+    expect(result).toEqual(counts)
   })
 })

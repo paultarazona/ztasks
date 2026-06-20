@@ -10,6 +10,7 @@ import { taskNotesRouter } from './task-notes/routes'
 import { feedbackRouter } from './feedback/routes'
 import { userProfilesRouter } from './user-profiles/routes'
 import { docsRouter } from './docs/routes'
+import { realtimeRouter } from './realtime/routes'
 
 export function createApp() {
   const app = new Hono()
@@ -28,6 +29,9 @@ export function createApp() {
   app.route('/task-notes', taskNotesRouter)
   app.route('/feedback', feedbackRouter)
   app.route('/user-profiles', userProfilesRouter)
+
+  // Realtime SSE
+  app.route('/realtime', realtimeRouter)
 
   // Docs
   app.route('/docs', docsRouter)

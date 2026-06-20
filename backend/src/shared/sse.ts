@@ -37,9 +37,10 @@ export class SSEManager {
   broadcast(channel: string, event: SSEEvent): void {
     const streams = this.channels.get(channel)
     if (!streams) return
-    const payload = `data: ${JSON.stringify(event)}\n\n`
+    // SSE wire format: named event with separate data line
+    const frame = `event: ${event.type}\ndata: ${JSON.stringify(event.payload)}\n\n`
     for (const stream of streams) {
-      stream.write(payload)
+      stream.write(frame)
     }
   }
 }

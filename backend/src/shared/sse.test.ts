@@ -5,6 +5,22 @@ function makeStream() {
   return { write: vi.fn() }
 }
 
+describe('SSEManager broadcast format', () => {
+  it('serializes event as SSE wire format: event: type\\ndata: {...}\\n\\n', () => {
+    const manager = new SSEManager()
+    const stream = makeStream()
+    manager.register('ch', stream as never)
+
+    manager.broadcast('ch', { type: 'task_created', payload: { id: 1 } })
+
+    const written = stream.write.mock.calls[0][0] as string
+    expect(written).toMatch(/^event: task_created\n/)
+    expect(written).toMatch(/data: /)
+    expect(written).toContain('"id":1')
+    expect(written).toMatch(/\n\n$/)
+  })
+})
+
 describe('SSEManager.broadcast', () => {
   it('calls write on all registered streams for the target channel', () => {
     const manager = new SSEManager()

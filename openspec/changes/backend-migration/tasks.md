@@ -41,7 +41,7 @@ Chain strategy: feature-branch-chain
 ### Phase 1.2: Service stubs
 
 - [x] 1.6 Write failing tests `frontend/src/services/tasksService.test.ts`: mock `apiClient`, assert `getTasksByCategory(id)` calls `GET /tasks?categoryId=id` and returns typed array (RED → GREEN)
-- [ ] 1.7 Create `frontend/src/services/tasksService.ts`: export `getTasksByCategory`, `createTask`, `updateTask`, `deleteTask`, `reorderTasks` — each calls `apiClient`; stub returns hardcoded data until backend exists (GREEN for 1.6)
+- [x] 1.7 Create `frontend/src/services/tasksService.ts`: export `getTasksByCategory`, `createTask`, `updateTask`, `deleteTask`, `reorderTasks` — each calls `apiClient` with hook-compatible temporary signatures (RED → GREEN)
 - [ ] 1.8 Create `frontend/src/services/categoriesService.ts`: export `getCategories`, `createCategory`, `updateCategory`, `deleteCategory` — stub implementations
 - [ ] 1.9 Create `frontend/src/services/authService.ts`: export `getMe`, `login`, `register`, `logout`, `verifyEmail`, `requestPasswordReset`, `verifyPasswordResetOtp`, `confirmPasswordReset`, `uploadAvatar` — stub implementations
 - [ ] 1.10 Create `frontend/src/services/notesService.ts`: export `getNotesByTask`, `createNote`, `deleteNote` — stub implementations

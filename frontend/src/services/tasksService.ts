@@ -1,6 +1,6 @@
 /**
- * tasksService — Slice 1 stub.
- * Forwards to InsForge internally. Slice 4 will replace with real apiClient calls.
+ * tasksService — Slice 1 service boundary.
+ * Task CRUD functions use apiClient; pending-count helpers remain temporary InsForge adapters until their SDD tasks run.
  */
 import { api } from '../lib/apiClient'
 import { insforge } from '../lib/insforge'
@@ -32,9 +32,9 @@ export interface ReorderTasksInput {
   updates: Array<{ id: string; position: number }>
 }
 
-export async function getTasksByCategory(categoryId: string): Promise<Task[]>
-export async function getTasksByCategory(_userId: string, categoryId: string): Promise<Task[]>
-export async function getTasksByCategory(
+export function getTasksByCategory(categoryId: string): Promise<Task[]>
+export function getTasksByCategory(_userId: string, categoryId: string): Promise<Task[]>
+export function getTasksByCategory(
   userIdOrCategoryId: string,
   maybeCategoryId?: string,
 ): Promise<Task[]> {
@@ -42,39 +42,20 @@ export async function getTasksByCategory(
   return api<Task[]>('GET', `/tasks?categoryId=${encodeURIComponent(categoryId)}`)
 }
 
-export async function createTask(input: CreateTaskInput): Promise<Task> {
-  const { user_id, ...rest } = input
-  const { data, error } = await insforge
-    .database.from('tasks')
-    .insert([{ ...rest, user_id }])
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as Task
+export function createTask(input: CreateTaskInput): Promise<Task> {
+  const { user_id, ...body } = input
+  void user_id
+  return api<Task>('POST', '/tasks', body)
 }
 
-export async function updateTask({ id, user_id, ...input }: UpdateTaskInput): Promise<Task> {
-  const { data, error } = await insforge
-    .database.from('tasks')
-    .update(input)
-    .eq('id', id)
-    .eq('user_id', user_id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as Task
+export function updateTask({ id, user_id, ...body }: UpdateTaskInput): Promise<Task> {
+  void user_id
+  return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, body)
 }
 
 export async function deleteTask(id: string, userId: string): Promise<void> {
-  const { error } = await insforge
-    .database.from('tasks')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', userId)
-
-  if (error) throw error
+  void userId
+  await api<void>('DELETE', `/tasks/${encodeURIComponent(id)}`)
 }
 
 export async function reorderTasks(
@@ -82,9 +63,11 @@ export async function reorderTasks(
   updates: Array<{ id: string; position: number }>,
 ): Promise<void> {
   void userId
-  void updates
-  // Stub: reorder is handled client-side via optimistic updates in Slice 1.
-  // Slice 4 will call PATCH /tasks/:id for each update.
+  await Promise.all(
+    updates.map(({ id, position }) =>
+      api<void>('PATCH', `/tasks/${encodeURIComponent(id)}/reorder`, { position }),
+    ),
+  )
 }
 
 export async function getPendingTaskCounts(

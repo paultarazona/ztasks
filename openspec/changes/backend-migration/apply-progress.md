@@ -60,7 +60,7 @@ Result: zero diagnostics.
 - Remaining service modules/functions still need task-aligned apiClient-backed tests and implementations before their checkboxes can be marked complete.
 - Engram search/context endpoints are unavailable in this session; memory writes worked only when `project: "task"` was supplied explicitly.
 
-## Latest apply step: 1.6
+## Apply step: 1.6
 
 Task 1.6 completed with strict TDD evidence:
 
@@ -73,12 +73,32 @@ cd frontend && npx vitest run src/services/tasksService.test.ts
 cd frontend && npm run test:run
 ```
 
+## Latest apply step: 1.7
+
+Task 1.7 completed with strict TDD evidence:
+
+1. RED: `cd frontend && npx vitest run src/services/tasksService.test.ts` failed for `createTask`, `updateTask`, `deleteTask`, and `reorderTasks` because they still used the old InsForge adapter or no-op stub.
+2. GREEN: `frontend/src/services/tasksService.ts` now routes:
+   - `createTask` → `api<Task>('POST', '/tasks', body)` without sending `user_id`.
+   - `updateTask` → `api<Task>('PATCH', '/tasks/:id', body)` without sending `id` or `user_id`.
+   - `deleteTask` → `api<void>('DELETE', '/tasks/:id')`.
+   - `reorderTasks` → `api<void>('PATCH', '/tasks/:id/reorder', { position })` for each update.
+3. Existing hook-compatible signatures remain in place until hook refactor tasks run.
+4. Validation passed:
+
+```bash
+cd frontend && npx vitest run src/services/tasksService.test.ts
+cd frontend && npm run test:run
+```
+
+LSP diagnostics for `frontend/src/services/tasksService.ts` and `frontend/src/services/tasksService.test.ts`: zero diagnostics.
+
 ## Next task
 
 Continue strict TDD at:
 
 ```text
-1.7 Complete tasksService apiClient-backed functions: createTask, updateTask, deleteTask, and reorderTasks.
+1.8 Create/update categoriesService tests and implementation for apiClient-backed category functions.
 ```
 
 Do not proceed to verify/sync/archive until apply tasks are complete and a verify report exists.

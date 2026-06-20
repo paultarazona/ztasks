@@ -1,8 +1,8 @@
 /**
- * realtimeService — Slice 1 stub.
- * Wraps InsForge realtime internally. Slice 5 will replace with real EventSource.
+ * realtimeService — no-op stub pending Slice 5 real EventSource implementation.
+ * Slice 4: removed InsForge realtime dependency. All functions are no-ops until
+ * Slice 5 wires them to the backend SSE endpoints.
  */
-import { insforge } from '../lib/insforge'
 
 export type TaskEventType = 'task_created' | 'task_updated' | 'task_deleted'
 export type FeedbackEventType = 'INSERT_feedback' | 'UPDATE_feedback' | 'DELETE_feedback'
@@ -21,105 +21,44 @@ export interface FeedbackEventHandlers {
 
 /**
  * Subscribe to task domain events for a given channel.
- * Returns a cleanup function that removes listeners and unsubscribes.
+ * Slice 5 will replace this no-op with real EventSource subscriptions.
  */
 export function subscribeToTaskChannel(
-  userId: string,
-  categoryId: string,
-  handlers: TaskEventHandlers,
+  _userId: string,
+  _categoryId: string,
+  _handlers: TaskEventHandlers,
 ): () => void {
-  const channel = `tasks:${userId}:${categoryId}`
-
-  const handleCreated = (payload: { task?: unknown }) => handlers.onTaskCreated?.(payload)
-  const handleUpdated = (payload: { task?: unknown }) => handlers.onTaskUpdated?.(payload)
-  const handleDeleted = (payload: { taskId?: string }) => handlers.onTaskDeleted?.(payload)
-
-  insforge.realtime.on('task_created', handleCreated)
-  insforge.realtime.on('task_updated', handleUpdated)
-  insforge.realtime.on('task_deleted', handleDeleted)
-
-  const connectAndSubscribe = async () => {
-    try {
-      if (!insforge.realtime.isConnected) {
-        await insforge.realtime.connect()
-      }
-      await insforge.realtime.subscribe(channel)
-    } catch {
-      // Realtime is additive; DB mutations still work if the socket is unavailable.
-    }
-  }
-
-  connectAndSubscribe()
-
-  return () => {
-    insforge.realtime.off('task_created', handleCreated)
-    insforge.realtime.off('task_updated', handleUpdated)
-    insforge.realtime.off('task_deleted', handleDeleted)
-    insforge.realtime.unsubscribe(channel)
-  }
+  return () => {}
 }
 
 /**
  * Publish a task event to the channel.
+ * Slice 5 will wire mutations to broadcast via backend SSE; client-side publish is no longer needed.
  */
 export async function publishTaskEvent(
-  userId: string,
-  categoryId: string,
-  event: string,
-  payload: Record<string, unknown>,
+  _userId: string,
+  _categoryId: string,
+  _event: string,
+  _payload: Record<string, unknown>,
 ): Promise<void> {
-  try {
-    await insforge.realtime.publish(`tasks:${userId}:${categoryId}`, event, payload)
-  } catch {
-    // Realtime must not block the persisted DB mutation flow.
-  }
+  // No-op: realtime events are pushed from the server in Slice 5.
 }
 
 /**
  * Subscribe to feedback admin events.
- * Returns a cleanup function.
+ * Slice 5 will replace this no-op with real EventSource subscriptions.
  */
-export function subscribeToFeedbackChannel(handlers: FeedbackEventHandlers): () => void {
-  const handleInsert = () => handlers.onInsert?.()
-  const handleUpdate = () => handlers.onUpdate?.()
-  const handleDelete = () => handlers.onDelete?.()
-
-  insforge.realtime.on('INSERT_feedback', handleInsert)
-  insforge.realtime.on('UPDATE_feedback', handleUpdate)
-  insforge.realtime.on('DELETE_feedback', handleDelete)
-
-  const connectAndSubscribe = async () => {
-    try {
-      if (insforge.realtime.isConnected) {
-        await insforge.realtime.subscribe('feedback')
-      } else {
-        await insforge.realtime.connect()
-        await insforge.realtime.subscribe('feedback')
-      }
-    } catch {
-      // Best-effort
-    }
-  }
-
-  connectAndSubscribe()
-
-  return () => {
-    insforge.realtime.off('INSERT_feedback', handleInsert)
-    insforge.realtime.off('UPDATE_feedback', handleUpdate)
-    insforge.realtime.off('DELETE_feedback', handleDelete)
-  }
+export function subscribeToFeedbackChannel(_handlers: FeedbackEventHandlers): () => void {
+  return () => {}
 }
 
 /**
- * Generic subscribe for future use (Slice 5 real EventSource signature).
- * Stub: returns no-op cleanup during Slice 1.
+ * Generic subscribe (Slice 5 real EventSource signature).
+ * Returns no-op cleanup until Slice 5 implementation.
  */
 export function subscribe(
   _channel: string,
   _handlers: Record<string, (payload: unknown) => void>,
 ): () => void {
-  void _channel
-  void _handlers
-  // Slice 5 will wire this to EventSource
   return () => {}
 }

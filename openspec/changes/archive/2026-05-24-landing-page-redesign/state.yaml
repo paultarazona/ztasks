@@ -1,0 +1,9 @@
+change_name: landing-page-redesign
+current_phase: apply
+completed_phases:
+  - init
+  - explore
+  - propose
+  - spec
+  - design
+  - tasks

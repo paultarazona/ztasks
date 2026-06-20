@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { insforge } from '../lib/insforge'
+import * as feedbackService from '../services/feedbackService'
 import { useAuthStore } from '../hooks/useAuthStore'
 
 interface FeedbackPayload {
@@ -17,13 +17,10 @@ export function useFeedback() {
 
     setIsLoading(true)
     try {
-      const { error } = await insforge.database
-        .from('feedback')
-        .insert({ user_id: user.id, type, message: message.trim() })
-        .select()
-        .single()
-
-      return { error }
+      await feedbackService.submitFeedback({ user_id: user.id, type, message: message.trim() })
+      return { error: null }
+    } catch (err: unknown) {
+      return { error: err instanceof Error ? err.message : 'Submission failed' }
     } finally {
       setIsLoading(false)
     }

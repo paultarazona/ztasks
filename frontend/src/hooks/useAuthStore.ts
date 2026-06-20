@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { insforge } from '../lib/insforge'
+import * as authService from '../services/authService'
 import { queryClient } from '../lib/queryClient'
 
 export interface AuthUser {
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>()(
             : null,
         })),
       signOut: async () => {
-        await insforge.auth.signOut()
+        await authService.signOut()
         queryClient.clear()
         set({ user: null, loading: false, initialized: true })
       },
@@ -53,14 +53,13 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true })
 
         try {
-          // Try SDK first — it will refresh session via httpOnly cookie if present
-          const { data } = await insforge.auth.getCurrentUser()
-          if (data?.user) {
-            set({ user: data.user, loading: false, initialized: true })
+          const user = await authService.getCurrentUser()
+          if (user) {
+            set({ user, loading: false, initialized: true })
             return
           }
         } catch {
-          // SDK session expired or cookie missing — do not trust persisted UI state.
+          // Session expired or cookie missing — do not trust persisted UI state.
         }
 
         set({

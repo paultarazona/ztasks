@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { insforge } from '../lib/insforge'
 import { useAuthStore } from './useAuthStore'
+import * as taskStatusesService from '../services/taskStatusesService'
 import type { TaskStatus } from '../types'
 
 let globalSeedPending = false
@@ -13,53 +13,25 @@ export function useTaskStatuses(categoryId?: string | null) {
   const query = useQuery({
     queryKey: ['task_statuses', categoryId ?? 'global', userId],
     queryFn: async () => {
-      const { data: globalData, error: globalError } = await insforge
-        .database.from('task_statuses')
-        .select('*')
-        .eq('user_id', userId!)
-        .is('category_id', null)
-        .order('position')
-
-      if (globalError) throw globalError
+      const globalData = await taskStatusesService.getGlobalStatuses(userId!)
 
       if (!categoryId) {
-        return (globalData ?? []) as TaskStatus[]
+        return globalData
       }
 
-      const { data: categoryData, error: categoryError } = await insforge
-        .database.from('task_statuses')
-        .select('*')
-        .eq('user_id', userId!)
-        .eq('category_id', categoryId)
-        .order('position')
+      const categoryData = await taskStatusesService.getCategoryStatuses(userId!, categoryId)
 
-      if (categoryError) throw categoryError
-
-      if (categoryData && categoryData.length > 0) {
-        return categoryData as TaskStatus[]
+      if (categoryData.length > 0) {
+        return categoryData
       }
 
-      return (globalData ?? []) as TaskStatus[]
+      return globalData
     },
     enabled: !!userId,
   })
 
   const seedGlobalStatuses = useMutation({
-    mutationFn: async () => {
-      const defaults = [
-        { user_id: userId, name: 'Pendiente', position: 0, color: '#6b7280' },
-        { user_id: userId, name: 'En progreso', position: 1, color: '#6366f1' },
-        { user_id: userId, name: 'Completado', position: 2, color: '#22c55e' },
-      ]
-
-      const { data, error } = await insforge
-        .database.from('task_statuses')
-        .insert(defaults)
-        .select()
-
-      if (error) throw error
-      return data as TaskStatus[]
-    },
+    mutationFn: () => taskStatusesService.seedGlobalStatuses(userId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task_statuses'] })
     },

@@ -1,0 +1,4 @@
+-- 001_drop_rls.sql
+-- Stub: RLS policies and current_app_user_id() function will be dropped here
+-- when the backend is wired to the real production database in Slice 3.
+-- No-op until then — do not run against production without review.

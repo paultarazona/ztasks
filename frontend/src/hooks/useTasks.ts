@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
-import { insforge } from '../lib/insforge'
 import { useAuthStore } from './useAuthStore'
+import * as tasksService from '../services/tasksService'
+import * as realtimeService from '../services/realtimeService'
 import type { Task, Priority } from '../types'
 import type { CreateTaskFormData } from '../components/tasks/CreateTaskDialog'
-
-type TaskCountRow = Pick<Task, 'category_id' | 'status_id'>
 
 interface CreateTaskInput {
   title: string
@@ -33,94 +32,51 @@ export function useTasks(categoryId?: string) {
   useEffect(() => {
     if (!categoryId || !userId) return
 
-    const channel = `tasks:${userId}:${categoryId}`
-
-    const handleTaskCreated = (payload: { task?: Task }) => {
-      if (!payload.task || payload.task.category_id !== categoryId) return
-
-      queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
-      queryClient.setQueryData<Task[]>(queryKey, (current = []) => {
-        if (current.some((task) => task.id === payload.task!.id)) return current
-        return [payload.task!, ...current]
-      })
-    }
-
-    const handleTaskUpdated = (payload: { task?: Task }) => {
-      if (!payload.task || payload.task.category_id !== categoryId) return
-      queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
-      queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-        current.map((task) => task.id === payload.task!.id ? payload.task! : task),
-      )
-    }
-
-    const handleTaskDeleted = (payload: { taskId?: string }) => {
-      if (!payload.taskId) return
-      queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
-      queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-        current.filter((task) => task.id !== payload.taskId),
-      )
-    }
-
-    insforge.realtime.on('task_created', handleTaskCreated)
-    insforge.realtime.on('task_updated', handleTaskUpdated)
-    insforge.realtime.on('task_deleted', handleTaskDeleted)
-
-    insforge.realtime
-      .connect()
-      .then(() => insforge.realtime.subscribe(channel))
-      .catch(() => {
-        // Realtime is additive; DB mutations still work if the socket is unavailable.
-      })
-
-    return () => {
-      insforge.realtime.off('task_created', handleTaskCreated)
-      insforge.realtime.off('task_updated', handleTaskUpdated)
-      insforge.realtime.off('task_deleted', handleTaskDeleted)
-      insforge.realtime.unsubscribe(channel)
-    }
+    return realtimeService.subscribeToTaskChannel(userId, categoryId, {
+      onTaskCreated: (payload) => {
+        const task = payload.task as Task | undefined
+        if (!task || task.category_id !== categoryId) return
+        queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
+        queryClient.setQueryData<Task[]>(queryKey, (current = []) => {
+          if (current.some((t) => t.id === task.id)) return current
+          return [task, ...current]
+        })
+      },
+      onTaskUpdated: (payload) => {
+        const task = payload.task as Task | undefined
+        if (!task || task.category_id !== categoryId) return
+        queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
+        queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
+          current.map((t) => (t.id === task.id ? task : t)),
+        )
+      },
+      onTaskDeleted: (payload) => {
+        if (!payload.taskId) return
+        queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
+        queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
+          current.filter((t) => t.id !== payload.taskId),
+        )
+      },
+    })
   }, [categoryId, queryClient, queryKey, userId])
 
   const publishTaskEvent = async (event: string, payload: Record<string, unknown>) => {
     if (!categoryId || !userId) return
-
-    try {
-      await insforge.realtime.publish(`tasks:${userId}:${categoryId}`, event, payload)
-    } catch {
-      // Realtime must not block the persisted DB mutation flow.
-    }
+    await realtimeService.publishTaskEvent(userId, categoryId, event, payload)
   }
 
   const query = useQuery({
     queryKey,
-    queryFn: async () => {
-      let q = insforge
-        .database.from('tasks')
-        .select('*')
-        .eq('user_id', userId!)
-        .order('created_at', { ascending: false })
-
-      if (categoryId) {
-        q = q.eq('category_id', categoryId)
-      }
-
-      const { data, error } = await q
-      if (error) throw error
-      return data as Task[]
+    queryFn: () => {
+      if (!categoryId || !userId) return []
+      return tasksService.getTasksByCategory(categoryId)
     },
     enabled: !!categoryId && !!userId,
   })
 
   const createTask = useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const userId = useAuthStore.getState().user?.id
-      const { data, error } = await insforge
-        .database.from('tasks')
-        .insert([{ ...input, user_id: userId }])
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as Task
+      return tasksService.createTask(input)
     },
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
@@ -134,26 +90,14 @@ export function useTasks(categoryId?: string) {
 
   const updateTask = useMutation({
     mutationFn: async ({ id, ...input }: UpdateTaskInput) => {
-      const { data, error } = await insforge
-        .database.from('tasks')
-        .update(input)
-        .eq('id', id)
-        .eq('user_id', useAuthStore.getState().user?.id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as Task
+      return tasksService.updateTask({ id, ...input })
     },
     onMutate: async ({ id, ...input }) => {
       await queryClient.cancelQueries({ queryKey })
-
       const previousTasks = queryClient.getQueryData<Task[]>(queryKey)
-
       queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-        current.map((task) => task.id === id ? { ...task, ...input } : task),
+        current.map((task) => (task.id === id ? { ...task, ...input } : task)),
       )
-
       return { previousTasks }
     },
     onError: (_error, _input, context) => {
@@ -164,7 +108,7 @@ export function useTasks(categoryId?: string) {
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
       queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-        current.map((item) => item.id === task.id ? task : item),
+        current.map((item) => (item.id === task.id ? task : item)),
       )
       publishTaskEvent('task_updated', { task })
     },
@@ -172,22 +116,14 @@ export function useTasks(categoryId?: string) {
 
   const deleteTask = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await insforge
-        .database.from('tasks')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', useAuthStore.getState().user?.id)
-
-      if (error) throw error
+      await tasksService.deleteTask(id)
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey })
       const previousTasks = queryClient.getQueryData<Task[]>(queryKey)
-
       queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
         current.filter((task) => task.id !== id),
       )
-
       return { previousTasks }
     },
     onError: (_error, _id, context) => {
@@ -220,30 +156,7 @@ export function usePendingTaskCounts() {
 
   return useQuery({
     queryKey: ['pending-task-counts', userId],
-    queryFn: async () => {
-      const [tasksResult, statusesResult] = await Promise.all([
-        insforge.database.from('tasks').select('category_id,status_id').eq('user_id', userId!),
-        insforge.database.from('task_statuses').select('id,name').eq('user_id', userId!),
-      ])
-
-      if (tasksResult.error) throw tasksResult.error
-      if (statusesResult.error) throw statusesResult.error
-
-      const completedStatusIds = new Set(
-        (statusesResult.data ?? [])
-          .filter((status) => status.name?.trim().toLocaleLowerCase() === 'completado')
-          .map((status) => status.id),
-      )
-
-      return ((tasksResult.data ?? []) as TaskCountRow[]).reduce<Record<string, number>>(
-        (counts, task) => {
-          if (completedStatusIds.has(task.status_id)) return counts
-          counts[task.category_id] = (counts[task.category_id] ?? 0) + 1
-          return counts
-        },
-        {},
-      )
-    },
+    queryFn: () => tasksService.getPendingTaskCounts(),
     enabled: !!userId,
   })
 }

@@ -1,39 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { insforge } from '../lib/insforge'
 import { useAuthStore } from './useAuthStore'
+import * as categoriesService from '../services/categoriesService'
 import type { Category } from '../types'
 
 export function useCategories() {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
 
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
+
   const query = useQuery({
     queryKey: ['categories', userId],
-    queryFn: async () => {
-      const { data, error } = await insforge
-        .database.from('categories')
-        .select('*')
-        .eq('user_id', userId!)
-        .is('deleted_at', null)
-        .order('name')
-
-      if (error) throw error
-      return data as Category[]
-    },
+    queryFn: () => categoriesService.getCategories(userId!),
     enabled: !!userId,
   })
 
   const createCategory = useMutation({
     mutationFn: async (input: { name: string; color?: string; parent_id?: string | null; type?: 'folder' | 'list' }) => {
-      const userId = useAuthStore.getState().user?.id
-      const { data, error } = await insforge
-        .database.from('categories')
-        .insert([{ type: 'list', ...input, user_id: userId }])
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as Category
+      const currentUserId = getCurrentUserId()
+      return categoriesService.createCategory({ ...input, user_id: currentUserId })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -42,16 +31,8 @@ export function useCategories() {
 
   const updateCategory = useMutation({
     mutationFn: async ({ id, ...input }: { id: string; name?: string; color?: string | null; parent_id?: string | null }) => {
-      const { data, error } = await insforge
-        .database.from('categories')
-        .update(input)
-        .eq('id', id)
-        .eq('user_id', useAuthStore.getState().user?.id)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data as Category
+      const currentUserId = getCurrentUserId()
+      return categoriesService.updateCategory({ id, user_id: currentUserId, ...input })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -64,21 +45,13 @@ export function useCategories() {
       rootId: string
       deletedAs: 'tree' | 'folder' | 'list'
     }) => {
-      const ids = input.ids
-
-      if (ids.length === 0) return
-
-      const categoryDelete = await insforge
-        .database.from('categories')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deleted_root_id: input.rootId,
-          deleted_as: input.deletedAs,
-        })
-        .in('id', ids)
-        .eq('user_id', useAuthStore.getState().user?.id)
-
-      if (categoryDelete.error) throw categoryDelete.error
+      const currentUserId = getCurrentUserId()
+      return categoriesService.deleteCategory({
+        ids: input.ids,
+        rootId: input.rootId,
+        userId: currentUserId,
+        deletedAs: input.deletedAs,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -94,36 +67,22 @@ export function useTrashCategories() {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
 
+  const getCurrentUserId = () => {
+    const currentUserId = useAuthStore.getState().user?.id
+    if (!currentUserId) throw new Error('User must be authenticated')
+    return currentUserId
+  }
+
   const query = useQuery({
     queryKey: ['trash-categories', userId],
-    queryFn: async () => {
-      const { data, error } = await insforge
-        .database.from('categories')
-        .select('*')
-        .eq('user_id', userId!)
-        .order('deleted_at', { ascending: false })
-
-      if (error) throw error
-      return (data as Category[]).filter((category) => category.deleted_at)
-    },
+    queryFn: () => categoriesService.getTrashCategories(userId!),
     enabled: !!userId,
   })
 
   const restoreCategory = useMutation({
     mutationFn: async (ids: string[]) => {
-      if (ids.length === 0) return
-
-      const { error } = await insforge
-        .database.from('categories')
-        .update({
-          deleted_at: null,
-          deleted_root_id: null,
-          deleted_as: null,
-        })
-        .in('id', ids)
-        .eq('user_id', useAuthStore.getState().user?.id)
-
-      if (error) throw error
+      const currentUserId = getCurrentUserId()
+      return categoriesService.restoreCategory(ids, currentUserId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -133,15 +92,8 @@ export function useTrashCategories() {
 
   const permanentDelete = useMutation({
     mutationFn: async (ids: string[]) => {
-      if (ids.length === 0) return
-
-      const { error } = await insforge
-        .database.from('categories')
-        .delete()
-        .in('id', ids)
-        .eq('user_id', useAuthStore.getState().user?.id)
-
-      if (error) throw error
+      const currentUserId = getCurrentUserId()
+      return categoriesService.permanentDeleteCategory(ids, currentUserId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })

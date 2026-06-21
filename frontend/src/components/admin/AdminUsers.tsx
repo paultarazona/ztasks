@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { insforge } from '../../lib/insforge'
+import * as feedbackService from '../../services/feedbackService'
 import { Users, Shield, RefreshCw } from 'lucide-react'
 import { Button } from '../ui/Button'
 
@@ -15,14 +15,7 @@ interface UserProfile {
 export function AdminUsers() {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: async () => {
-      const { data, error } = await insforge
-        .database.from('user_profiles_with_email')
-        .select('*')
-        .order('last_login', { ascending: false })
-      if (error) throw error
-      return data as UserProfile[]
-    },
+    queryFn: () => feedbackService.getAdminUsers() as Promise<UserProfile[]>,
   })
 
   return (

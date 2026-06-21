@@ -1,7 +1,7 @@
 import { useState, type FormEvent, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { insforge } from '../lib/insforge'
+import * as authService from '../services/authService'
 import { useAuthStore } from '../hooks/useAuthStore'
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -65,18 +65,10 @@ export function AuthPage() {
   const handleGoogleAuth = async () => {
     setError('')
     try {
-      await insforge.auth.signInWithOAuth({
-        provider: 'google',
-        redirectTo: `${window.location.origin}/dashboard`,
-      })
+      await authService.signInWithGoogle()
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Error al iniciar sesión con Google'))
     }
-  }
-
-  const handleAdminCheck = async (userId: string) => {
-    const { data } = await insforge.database.from('admin_users').select('user_id').eq('user_id', userId).maybeSingle()
-    return !!data
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -87,31 +79,22 @@ export function AuthPage() {
 
     try {
       if (isLogin) {
-        const { data, error: authError } = await insforge.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (authError) throw authError
-        const user = data?.user ?? null
+        const { user } = await authService.signIn(email, password)
         setAuth(user)
-        
+
         if (user) {
-          const isAdmin = await handleAdminCheck(user.id)
+          const isAdmin = await authService.checkIsAdmin()
           navigate(isAdmin ? '/admin' : '/dashboard')
         } else {
           navigate('/dashboard')
         }
       } else {
-        const { data, error: authError } = await insforge.auth.signUp({
-          email,
-          password,
-        })
-        if (authError) throw authError
-        if (data?.requireEmailVerification) {
+        const { user, requireEmailVerification } = await authService.signUp(email, password)
+        if (requireEmailVerification) {
           setNeedsVerification(true)
           setSuccess('Te enviamos un código de verificación a tu email. Revisá tu bandeja de entrada.')
         } else {
-          setAuth(data?.user ?? null)
+          setAuth(user)
           navigate('/dashboard')
         }
       }
@@ -134,12 +117,8 @@ export function AuthPage() {
     setLoading(true)
 
     try {
-      const { data, error: verifyError } = await insforge.auth.verifyEmail({
-        email,
-        otp: code,
-      })
-      if (verifyError) throw verifyError
-      setAuth(data?.user ?? null)
+      const { user } = await authService.verifyOTP(email, code)
+      setAuth(user)
       navigate('/dashboard')
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Código inválido o expirado'))
@@ -153,7 +132,7 @@ export function AuthPage() {
     setSuccess('')
     setLoading(true)
     try {
-      await insforge.auth.resendVerificationEmail({ email })
+      await authService.resendOTP(email)
       setSuccess('Reenviamos el código. Revisá tu email.')
     } catch {
       setSuccess('Reenviamos el código. Revisá tu email.')

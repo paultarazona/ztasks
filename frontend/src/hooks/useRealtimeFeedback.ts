@@ -1,48 +1,20 @@
 import { useEffect } from 'react'
-import { insforge } from '../lib/insforge'
 import { useQueryClient } from '@tanstack/react-query'
+import * as realtimeService from '../services/realtimeService'
 
 export function useRealtimeFeedback() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    // Subscribe function
-    const subscribe = async () => {
-      const result = await insforge.realtime.subscribe('feedback')
-      if (!result.ok) console.error('Subscribe failed:', result.error?.message)
-    }
-
-    // Ensure connected and subscribe
-    if (insforge.realtime.isConnected) {
-      subscribe()
-    } else {
-      insforge.realtime.connect().then(() => subscribe())
-    }
-
-    // Listen for feedback events
-    const handleInsert = () => {
+    const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-feedbacks'] })
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
     }
 
-    const handleUpdate = () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-feedbacks'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
-    }
-
-    const handleDelete = () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-feedbacks'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
-    }
-
-    insforge.realtime.on('INSERT_feedback', handleInsert)
-    insforge.realtime.on('UPDATE_feedback', handleUpdate)
-    insforge.realtime.on('DELETE_feedback', handleDelete)
-
-    return () => {
-      insforge.realtime.off('INSERT_feedback', handleInsert)
-      insforge.realtime.off('UPDATE_feedback', handleUpdate)
-      insforge.realtime.off('DELETE_feedback', handleDelete)
-    }
+    return realtimeService.subscribeToFeedbackChannel({
+      onInsert: invalidate,
+      onUpdate: invalidate,
+      onDelete: invalidate,
+    })
   }, [queryClient])
 }

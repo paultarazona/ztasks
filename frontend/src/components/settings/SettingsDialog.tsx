@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Camera, KeyRound, Mail, Shield, Upload, User, X } from 'lucide-react'
-import { insforge } from '../../lib/insforge'
+import * as authService from '../../services/authService'
 import { useAuthStore } from '../../hooks/useAuthStore'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -73,20 +73,18 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setMessage(null)
     setError(null)
 
-    const { data, error } = await insforge.auth.setProfile({
-      name: name.trim() || null,
-      avatar_url: avatarUrl.trim() || null,
-    })
-
-    setSavingProfile(false)
-
-    if (error) {
-      setError(error.message || 'No se pudo guardar el perfil.')
-      return
+    try {
+      const data = await authService.setProfile({
+        name: name.trim() || null,
+        avatar_url: avatarUrl.trim() || null,
+      })
+      updateProfile({ ...data })
+      setMessage('Perfil actualizado.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el perfil.')
+    } finally {
+      setSavingProfile(false)
     }
-
-    updateProfile(data ?? { name: name.trim(), avatar_url: avatarUrl.trim() })
-    setMessage('Perfil actualizado.')
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,49 +104,32 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setUploading(true)
     setError(null)
 
-    const { data, error: uploadError } = await insforge.storage
-      .from('avatars')
-      .uploadAuto(file)
+    try {
+      const { url: newUrl } = await authService.uploadAvatar(file)
+      setAvatarUrl(newUrl)
 
-    setUploading(false)
-
-    if (uploadError) {
-      setError(uploadError.message || 'No se pudo subir la imagen.')
-      return
+      // Auto-save immediately so sidebar updates without reload
+      await authService.setProfile({ avatar_url: newUrl })
+      updateProfile({ avatar_url: newUrl })
+      setMessage('Imagen subida y guardada correctamente.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
-
-    const newUrl = data!.url
-    setAvatarUrl(newUrl)
-
-    // Auto-save immediately so sidebar updates without reload
-    const { error: profileError } = await insforge.auth.setProfile({
-      avatar_url: newUrl,
-    })
-
-    if (profileError) {
-      setError(profileError.message || 'Se subio la imagen pero no se pudo guardar el perfil.')
-      return
-    }
-
-    updateProfile({ avatar_url: newUrl })
-    setMessage('Imagen subida y guardada correctamente.')
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveAvatar = async () => {
     setAvatarUrl('')
 
-    const { error } = await insforge.auth.setProfile({
-      avatar_url: null,
-    })
-
-    if (error) {
-      setError(error.message || 'No se pudo quitar la foto del perfil.')
-      return
+    try {
+      await authService.setProfile({ avatar_url: null })
+      updateProfile({ avatar_url: null })
+      setMessage('Foto de perfil eliminada. Se mostrará un avatar por defecto.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo quitar la foto del perfil.')
     }
-
-    updateProfile({ avatar_url: null })
-    setMessage('Foto de perfil eliminada. Se mostrará un avatar por defecto.')
   }
 
   const handleSendResetCode = async () => {
@@ -157,21 +138,16 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setMessage(null)
     setError(null)
 
-    const { error } = await insforge.auth.sendResetPasswordEmail({
-      email: user.email,
-      redirectTo: `${window.location.origin}/auth`,
-    })
-
-    setSendingReset(false)
-
-    if (error) {
-      setError(error.message || 'No se pudo enviar el codigo.')
-      return
+    try {
+      await authService.sendResetEmail(user.email)
+      setPasswordStep('verify')
+      setResetOtp(['', '', '', '', '', ''])
+      setTimeout(() => resetOtpRefs.current[0]?.focus(), 100)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo enviar el codigo.')
+    } finally {
+      setSendingReset(false)
     }
-
-    setPasswordStep('verify')
-    setResetOtp(['', '', '', '', '', ''])
-    setTimeout(() => resetOtpRefs.current[0]?.focus(), 100)
   }
 
   const handleResetOtpChange = (index: number, value: string) => {
@@ -200,22 +176,17 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setError('')
     setSendingReset(true)
 
-    const { data, error } = await insforge.auth.exchangeResetPasswordToken({
-      email: user!.email,
-      code,
-    })
-
-    setSendingReset(false)
-
-    if (error) {
-      setError(error.message || 'Codigo invalido o expirado')
-      return
+    try {
+      const { token } = await authService.verifyResetToken(user!.email, code)
+      setResetToken(token)
+      setPasswordStep('reset')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Codigo invalido o expirado')
+    } finally {
+      setSendingReset(false)
     }
-
-    setResetToken(data!.token)
-    setPasswordStep('reset')
-    setNewPassword('')
-    setConfirmPassword('')
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -233,24 +204,19 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
 
     setSendingReset(true)
 
-    const { error } = await insforge.auth.resetPassword({
-      newPassword,
-      otp: resetToken,
-    })
-
-    setSendingReset(false)
-
-    if (error) {
-      setError(error.message || 'No se pudo cambiar la clave.')
-      return
+    try {
+      await authService.resetPassword(newPassword, resetToken)
+      setMessage('Clave cambiada correctamente.')
+      setPasswordStep('send')
+      setResetToken('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setResetOtp(['', '', '', '', '', ''])
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar la clave.')
+    } finally {
+      setSendingReset(false)
     }
-
-    setMessage('Clave cambiada correctamente.')
-    setPasswordStep('send')
-    setResetToken('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setResetOtp(['', '', '', '', '', ''])
   }
 
   const cancelPasswordChange = () => {

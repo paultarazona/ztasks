@@ -103,7 +103,7 @@ export async function checkIsAdmin(_userId: string): Promise<boolean> {
     await api<unknown[]>('GET', '/admin/users')
     return true
   } catch (err) {
-    if (err instanceof ApiError && err.status === 403) return false
+    if (err instanceof ApiError && (err.status === 403 || err.status === 404)) return false
     throw err
   }
 }

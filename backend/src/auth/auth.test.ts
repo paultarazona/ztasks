@@ -1,32 +1,52 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Hono } from 'hono'
+
+// Mock getSession before importing routes so requireAuth never hits a real DB
+vi.mock('../shared/auth', () => ({
+  getSession: vi.fn(),
+  auth: {
+    handler: vi.fn(async () => new Response('Not Implemented', { status: 501 })),
+  },
+}))
+
+import { getSession } from '../shared/auth'
 import { authRouter } from './routes'
 
-function makeApp(user?: { id: string; email: string; name: string; avatar_url: string | null }) {
+const mockGetSession = vi.mocked(getSession)
+
+const stubUser = { id: 'user-1', email: 'test@example.com', name: 'Test User', emailVerified: false, image: null }
+const stubSession = {
+  session: { id: 'sess-1', userId: 'user-1', expiresAt: new Date(), token: 'tok' },
+  user: stubUser,
+}
+
+function makeApp(authenticated = false) {
   const app = new Hono()
-  app.use('*', async (c, next) => {
-    if (user) {
-      c.set('user' as never, user)
-    }
-    await next()
-  })
+  if (authenticated) {
+    mockGetSession.mockResolvedValue(stubSession as never)
+  } else {
+    mockGetSession.mockResolvedValue(null)
+  }
   app.route('/auth', authRouter)
   return app
 }
 
-const stubUser = { id: 'user-1', email: 'test@example.com', name: 'Test User', avatar_url: null }
-
 describe('GET /auth/me', () => {
   it('returns user fields when authenticated', async () => {
-    const app = makeApp(stubUser)
+    const app = makeApp(true)
     const res = await app.request('/auth/me')
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toEqual({ id: 'user-1', email: 'test@example.com', name: 'Test User', avatar_url: null })
+    expect(body).toEqual({
+      id: 'user-1',
+      email: 'test@example.com',
+      name: 'Test User',
+      avatar_url: null,
+    })
   })
 
   it('returns 401 when no user is set', async () => {
-    const app = makeApp()
+    const app = makeApp(false)
     const res = await app.request('/auth/me')
     expect(res.status).toBe(401)
     const body = await res.json()

@@ -11,21 +11,32 @@ vi.mock('../shared/db', () => ({
   },
 }))
 
+// Mock getSession so requireAuth never hits a real DB
+vi.mock('../shared/auth', () => ({
+  getSession: vi.fn(),
+}))
+
+import { getSession } from '../shared/auth'
 import { tasksRouter } from './routes'
 
-function makeApp(user?: { id: string; email: string; name: string; avatar_url: string | null }) {
+const mockGetSession = vi.mocked(getSession)
+
+const stubUser = { id: 'user1', email: 'u@test.com', name: 'User', image: null }
+const stubSession = {
+  session: { id: 'sess-1', userId: 'user1', expiresAt: new Date(), token: 'tok' },
+  user: stubUser,
+}
+
+function makeApp(authenticated = false) {
   const app = new Hono()
-  app.use('*', async (c, next) => {
-    if (user) {
-      c.set('user' as never, user)
-    }
-    await next()
-  })
+  if (authenticated) {
+    mockGetSession.mockResolvedValue(stubSession as never)
+  } else {
+    mockGetSession.mockResolvedValue(null)
+  }
   app.route('/tasks', tasksRouter)
   return app
 }
-
-const stubUser = { id: 'user1', email: 'u@test.com', name: 'User', avatar_url: null }
 
 describe('GET /tasks', () => {
   beforeEach(() => {
@@ -42,7 +53,7 @@ describe('GET /tasks', () => {
     const fromMock = vi.fn().mockReturnValue({ where: whereMock })
     ;(db.select as ReturnType<typeof vi.fn>).mockReturnValue({ from: fromMock })
 
-    const app = makeApp(stubUser)
+    const app = makeApp(true)
     const res = await app.request('/tasks?categoryId=42')
     expect(res.status).toBe(200)
 
@@ -53,7 +64,7 @@ describe('GET /tasks', () => {
   })
 
   it('returns 401 when no user is set', async () => {
-    const app = makeApp()
+    const app = makeApp(false)
     const res = await app.request('/tasks?categoryId=42')
     expect(res.status).toBe(401)
     const body = await res.json()
@@ -63,7 +74,7 @@ describe('GET /tasks', () => {
 
 describe('POST /tasks', () => {
   it('returns 401 without user', async () => {
-    const app = makeApp()
+    const app = makeApp(false)
     const res = await app.request('/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

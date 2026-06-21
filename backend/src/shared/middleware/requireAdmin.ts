@@ -1,22 +1,32 @@
 import type { Context, Next } from 'hono'
-import { requireAuth } from './requireAuth'
-import { forbidden } from '../errors'
+import { eq } from 'drizzle-orm'
+import { getSession } from '../auth'
+import { unauthorized, forbidden } from '../errors'
+import { getDb } from '../db'
+import { adminUsers } from '../../db/schema/admin-users'
 
 /**
  * Guards a route for admin-only access.
- * First enforces authentication via requireAuth, then checks admin status.
- *
- * TODO (Slice 3): Replace the placeholder 403 with a real admin_users table lookup
- * once the backend is wired to the production database.
+ * Validates the session, then checks the admin_users table for the user's ID.
  */
 export async function requireAdmin(c: Context, next: Next): Promise<Response | void> {
-  const authResult = await requireAuth(c, next)
-  // If requireAuth returned a response (401), propagate it
-  if (authResult instanceof Response) {
-    return authResult
+  const session = await getSession(c.req.raw)
+  if (!session) {
+    return c.json(unauthorized(), 401)
   }
 
-  // TODO: Check admin_users table for the authenticated user's ID
-  // For now, return 403 as a placeholder until real admin check is wired in Slice 3
-  return c.json(forbidden(), 403)
+  c.set('user' as never, session.user)
+
+  const db = getDb()
+  const rows = await db
+    .select()
+    .from(adminUsers)
+    .where(eq(adminUsers.userId, session.user.id))
+    .limit(1)
+
+  if (rows.length === 0) {
+    return c.json(forbidden(), 403)
+  }
+
+  return next()
 }

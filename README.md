@@ -1,162 +1,296 @@
-# TaskForge
+# ztasks
 
-Segundo cerebro para la gestión de tareas universitarias, personales y profesionales.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-green)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org)
+[![Hono](https://img.shields.io/badge/Backend-Hono-orange)](https://hono.dev)
+[![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB)](https://react.dev)
 
-## Que es TaskForge
+> A self-hosted task management app for university, personal, and professional work.
 
-TaskForge es una aplicación de productividad que organiza tus proyectos mediante:
+## What It Does
 
-- **Kanban**: Tableros visuales con columnas personalizables (Por hacer, En progreso, Completado, etc.)
-- **Jerarquia infinita**: Carpetas que contienen listas, que contienen tareas. Anida tanto como necesites.
-- **Notas**: Cada tarea tiene su propio espacio de notas para detalles, enlaces y contexto.
-- **Prioridades**: Baja, media, alta y urgente.
-- **Fechas de vencimiento**: Para mantener el ritmo.
-- **Papelera**: Borra carpetas, listas o tareas individuales sin perderlas para siempre.
+ztasks is a productivity app that organizes your work through a clean visual interface:
 
-## Stack tecnico
+- **Kanban boards** — Visual columns you define (To Do, In Progress, Done, etc.)
+- **Categories** — Group tasks by project or context, each with its own board
+- **Task notes** — Each task has its own notes area for details, links, and context
+- **Priorities** — Low, medium, high, and urgent
+- **Due dates** — Keep work on schedule
+- **Trash** — Delete categories or tasks without losing them permanently
+- **Real-time updates** — Changes appear instantly across tabs via Server-Sent Events
+- **Admin panel** — Manage users and feedback from a dedicated admin area
 
-| Capa | Tecnologia |
-|------|-----------|
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
 | Frontend | React 19 + TypeScript + Vite 7 |
-| Estilos | Tailwind CSS 3.4 |
-| Estado | Zustand (auth, theme) + React Query (servidor) |
+| Styles | Tailwind CSS 3.4 |
+| Client state | Zustand (auth, theme) |
+| Server state | React Query + real-time SSE |
 | Drag & Drop | @dnd-kit/core + sortable |
-| Backend | InsForge (PostgreSQL + PostgREST + Auth) |
-| SDK | @insforge/sdk |
+| Backend | Hono (Node.js) |
+| ORM | Drizzle ORM |
+| Database | PostgreSQL |
+| Auth | BetterAuth (email/password, sessions) |
 
-## Estructura del proyecto
+## Prerequisites
+
+- Node.js 22+
+- PostgreSQL 15+ running locally or remotely
+- npm
+
+## Project Structure
 
 ```
-task/
-├── frontend/          # Aplicacion React
+ztasks/
+├── backend/                   # Hono API server
 │   ├── src/
-│   │   ├── components/    # UI components (atomic design)
-│   │   │   ├── categories/   # Arbol de carpetas/listas, creacion de categorias
-│   │   │   ├── kanban/       # Tablero Kanban, columnas, drag & drop
-│   │   │   ├── layout/       # Sidebar, ProtectedRoute
-│   │   │   ├── tasks/        # Tarjetas de tarea, creacion, detalle, listado
-│   │   │   └── warnings/     # Dialogos de confirmacion reutilizables
-│   │   ├── hooks/         # Zustand stores + React Query hooks
-│   │   ├── pages/         # Rutas principales (Landing, Auth, Dashboard)
-│   │   └── lib/           # Cliente InsForge y utilidades
+│   │   ├── auth/              # BetterAuth routes (/auth/me, sign-in, sign-up)
+│   │   ├── tasks/             # Task CRUD routes
+│   │   ├── categories/        # Category CRUD routes
+│   │   ├── task-statuses/     # Kanban column routes
+│   │   ├── task-notes/        # Per-task notes routes
+│   │   ├── feedback/          # User feedback routes
+│   │   ├── user-profiles/     # Profile update routes
+│   │   ├── admin/             # Admin-only routes
+│   │   ├── realtime/          # SSE event streams
+│   │   ├── db/
+│   │   │   └── schema/        # Drizzle table definitions
+│   │   └── shared/            # Auth, DB, middleware, errors, SSE manager
+│   ├── drizzle.config.ts
+│   └── package.json
+├── frontend/                  # React application
+│   ├── src/
+│   │   ├── components/        # UI components (atomic design)
+│   │   │   ├── categories/    # Folder tree, category creation
+│   │   │   ├── kanban/        # Kanban board, columns, drag & drop
+│   │   │   ├── tasks/         # Task cards, creation, detail, list view
+│   │   │   ├── settings/      # Profile and account settings
+│   │   │   └── layout/        # Sidebar, ProtectedRoute
+│   │   ├── hooks/             # Zustand stores + React Query hooks
+│   │   ├── services/          # API service functions (one file per domain)
+│   │   ├── lib/               # apiClient, errors
+│   │   └── pages/             # Top-level routes (Landing, Auth, Dashboard)
 │   └── index.html
-├── schema.sql         # Esquema de PostgreSQL con RLS
-└── AGENTS.md          # Guia para agentes de IA (InsForge SDK)
+└── README.md
 ```
 
-## Requisitos
+## Installation
 
-- Node.js 18+
-- npm o pnpm
+### 1. Clone the repository
 
-## Instalacion
+```bash
+git clone https://github.com/paultarazona/ztasks.git
+cd ztasks
+```
+
+### 2. Install backend dependencies
+
+```bash
+cd backend
+npm install
+```
+
+### 3. Install frontend dependencies
 
 ```bash
 cd frontend
 npm install
 ```
 
-## Variables de entorno
+## Configuration
 
-Crea `frontend/.env`:
+### Backend — `backend/.env`
 
 ```env
-VITE_INSFORGE_URL=https://tu-app.region.insforge.app
-VITE_INSFORGE_ANON_KEY=tu-anon-key
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ztasks
+BETTER_AUTH_SECRET=your-secret-key-change-in-production
+BETTER_AUTH_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:5173
+PORT=3001
 ```
 
-Obtiene estos valores desde el panel de InsForge o ejecutando `npm run get-metadata`.
+### Frontend — `frontend/.env.local`
 
-## Scripts disponibles
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+## Database Setup
+
+Create the database, then run Drizzle migrations:
 
 ```bash
-npm run dev      # Servidor de desarrollo (Vite)
-npm run build    # Build de produccion
-npm run lint     # ESLint
-npm run preview  # Preview del build
+# In psql or pgAdmin, create the database first:
+# CREATE DATABASE ztasks;
+
+cd backend
+npx drizzle-kit migrate
 ```
 
-## Convenciones del equipo
+## Running Locally
+
+Start both servers in separate terminals:
+
+```bash
+# Terminal 1 — backend (http://localhost:3001)
+cd backend
+npm run dev
+
+# Terminal 2 — frontend (http://localhost:5173)
+cd frontend
+npm run dev
+```
+
+## Available Scripts
+
+### Backend
+
+```bash
+npm run dev        # Start dev server with .env auto-loaded
+npm run build      # Compile TypeScript
+npm test           # Run Vitest test suite
+npx drizzle-kit migrate    # Apply pending migrations
+npx drizzle-kit generate   # Generate migration from schema changes
+```
+
+### Frontend
+
+```bash
+npm run dev        # Vite dev server
+npm run build      # Production build
+npm run lint       # ESLint
+npm run preview    # Preview production build
+npm test           # Run Vitest test suite
+```
+
+## Architecture
+
+### Backend
+
+The backend follows **Screaming Architecture** — folders are named after business domains, not technical patterns:
+
+```
+auth/ tasks/ categories/ task-statuses/ task-notes/ feedback/ admin/ realtime/
+```
+
+Each domain folder contains a `routes.ts` file with all HTTP handlers for that domain.
+
+**Request flow:**
+
+```
+HTTP Request
+  → CORS middleware
+  → requireAuth / requireAdmin middleware (validates BetterAuth session cookie)
+  → Route handler
+  → Drizzle ORM → PostgreSQL
+  → JSON response
+```
+
+**Real-time flow:**
+
+```
+Mutation (POST/PATCH/DELETE)
+  → Route handler writes to DB
+  → SSEManager.broadcast(channel, event)
+  → All connected clients on that channel receive the event
+```
+
+### Frontend
+
+- **`apiClient.ts`** — Single `fetch` wrapper used by all services. Sends `credentials: 'include'` so the session cookie is always attached.
+- **`services/`** — One file per domain. Each service function calls `apiClient`. Hooks never touch the network directly.
+- **`hooks/`** — React Query hooks wrap service functions and manage cache, loading, and error state.
+- **`stores/`** — Zustand for synchronous global state (auth user, theme).
+
+### Data Model
+
+```
+users (BetterAuth)
+  └──1:N── categories
+              ├──1:N── tasks ──1:N── task_notes
+              └──1:N── task_statuses (Kanban columns)
+```
+
+## API Overview
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/sign-up/email` | Register with email + password |
+| `POST` | `/auth/sign-in/email` | Sign in |
+| `POST` | `/auth/sign-out` | Sign out |
+| `GET` | `/auth/me` | Get current user |
+| `GET` | `/tasks` | List tasks (filter by `?categoryId=`) |
+| `POST` | `/tasks` | Create task |
+| `PATCH` | `/tasks/:id` | Update task |
+| `DELETE` | `/tasks/:id` | Delete task |
+| `GET` | `/categories` | List categories |
+| `POST` | `/categories` | Create category |
+| `GET` | `/realtime/tasks/:categoryId` | SSE stream for task events |
+| `GET` | `/health` | Health check |
+
+Full OpenAPI spec available at `GET /docs/openapi.json` when the backend is running.
+
+## Team Conventions
 
 ### Commits
 
-- Usamos [Conventional Commits](https://www.conventionalcommits.org/)
-- Formato: `tipo(alcance): descripcion`
-- Ejemplos: `feat: add drag-and-drop to kanban`, `fix: prevent cross-user data leak`
-- **No agregar** atribucion de IA (no "Co-Authored-By").
-
-### Ramas
-
-- `main`: Produccion / deploy
-- `feature/*`: Features nuevos
-- `fix/*`: Correcciones urgentes
-
-### Estilo de codigo
-
-- TypeScript estricto habilitado.
-- Tailwind CSS para todo el estilado; **no crear CSS modules ni styled-components**.
-- Componentes funcionales con hooks. **Evitar clases de React**.
-- Estados derivados > `useEffect` sincronizador. Si podes calcular algo en render, no lo pongas en un effect.
-
-### Arquitectura
-
-- **Container/Presentational**: Los `pages/` orquestan; los `components/` solo reciben props.
-- **Zustand** solo para estado global sincrono (auth, tema). **React Query** para todo lo asincrono (datos del servidor).
-- **RLS**: Cada tabla tiene Row Level Security. El frontend filtra por `user_id`, pero la DB es la ultima linea de defensa.
-
-## Flujo de trabajo para contribuir
-
-1. **Crear rama** desde `main`:
-   ```bash
-   git checkout -b feature/mi-feature
-   ```
-
-2. **Desarrollar** con `npm run dev`.
-
-3. **Verificar** antes de commitear:
-   ```bash
-   npm run lint
-   ```
-
-4. **Commitear** con mensaje descriptivo:
-   ```bash
-   git commit -m "feat: descripcion corta y clara"
-   ```
-
-5. **Push y PR**:
-   ```bash
-   git push origin feature/mi-feature
-   ```
-   Luego abrir Pull Request hacia `main`.
-
-## Modelo de datos (resumen)
+We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-users (auth) --1:N--> categories --1:N--> tasks --1:N--> task_notes
-                          |
-                          +--1:N--> task_statuses (columnas Kanban)
+feat: add drag-and-drop to kanban
+fix: prevent cross-user data access
+refactor: remove dead userId params from task service
 ```
 
-Ver `schema.sql` para el DDL completo con indices, triggers y politicas RLS.
+No AI attribution in commits.
 
-## Seguridad
+### Branches
 
-- Toda tabla tiene **Row Level Security (RLS)** activada.
-- El backend usa `current_app_user_id()` para aislamiento por usuario.
-- El frontend siempre filtra queries por `user_id` como capa adicional.
-- **Nunca** desactivar RLS en produccion.
+| Branch | Purpose |
+|--------|---------|
+| `main` | Production |
+| `feature/*` | New features |
+| `fix/*` | Bug fixes |
 
-## Deploy
+### Code Style
 
-El proyecto se despliega automaticamente en la rama `main` via InsForge hosting. No requiere configuracion extra si el build de Vite es exitoso.
+- Strict TypeScript enabled on both frontend and backend.
+- Tailwind CSS for all styling — no CSS modules or styled-components.
+- Functional React components with hooks only.
+- Derived state over `useEffect` — if you can compute it during render, do not put it in an effect.
 
-## Recursos utiles
+## Security
 
-- [InsForge SDK Docs](https://docs.insforge.app) — Referencia de la API
-- [Tailwind CSS](https://tailwindcss.com/docs) — Utilidades de estilo
-- [React Query](https://tanstack.com/query/latest) — Manejo de estado servidor
-- [Zustand](https://github.com/pmndrs/zustand) — Estado global cliente
+- Session cookies are issued by BetterAuth and validated on every protected request via the `requireAuth` middleware.
+- All data queries are scoped to the authenticated user's ID — users cannot read or modify each other's data.
+- Admin routes are protected by `requireAdmin`, which checks the `admin_users` table before allowing access.
+- Unhandled server errors return a generic `{ error, code }` shape — no stack traces are exposed to clients.
 
-## Contacto
+## Contributing
 
-Para dudas tecnicas o decisiones de arquitectura, abrir un issue en el repo o consultar `AGENTS.md` para el contexto de InsForge.
+1. Create a branch from `main`:
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. Run both servers locally and verify the golden path works.
+
+3. Run tests before committing:
+   ```bash
+   cd backend && npm test
+   cd frontend && npm test
+   ```
+
+4. Commit with a conventional commit message and open a PR to `main`.
+
+## Resources
+
+- [Hono docs](https://hono.dev/docs) — Backend framework reference
+- [Drizzle ORM docs](https://orm.drizzle.team) — Database queries and migrations
+- [BetterAuth docs](https://www.better-auth.com/docs) — Authentication reference
+- [React Query docs](https://tanstack.com/query/latest) — Server state management
+- [Zustand docs](https://github.com/pmndrs/zustand) — Client state management
+- [Tailwind CSS docs](https://tailwindcss.com/docs) — Utility classes reference

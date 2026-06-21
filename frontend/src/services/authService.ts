@@ -1,8 +1,8 @@
 /**
- * authService — Slice 1 stub.
- * Forwards to InsForge internally. Slice 4 will replace with real apiClient calls.
+ * authService — real implementation using apiClient.
+ * Slice 4: replaced InsForge stubs with direct apiClient calls.
  */
-import { insforge } from '../lib/insforge'
+import { api, ApiError } from '../lib/apiClient'
 import type { AuthUser } from '../hooks/useAuthStore'
 
 export interface SignInResult {
@@ -19,80 +19,88 @@ export interface ProfileData {
   avatar_url?: string | null
 }
 
-export async function signIn(email: string, password: string): Promise<SignInResult> {
-  const { data, error } = await insforge.auth.signInWithPassword({ email, password })
-  if (error) throw error
-  return { user: (data?.user ?? null) as AuthUser | null }
-}
-
-export async function signUp(email: string, password: string): Promise<SignUpResult> {
-  const { data, error } = await insforge.auth.signUp({ email, password })
-  if (error) throw error
-  return {
-    user: (data?.user ?? null) as AuthUser | null,
-    requireEmailVerification: data?.requireEmailVerification ?? false,
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const data = await api<AuthUser>('GET', '/auth/me')
+    return data ?? null
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) return null
+    throw err
   }
 }
 
+export async function signIn(email: string, password: string): Promise<SignInResult> {
+  return api<SignInResult>('POST', '/auth/login', { email, password })
+}
+
+export async function signUp(email: string, password: string): Promise<SignUpResult> {
+  return api<SignUpResult>('POST', '/auth/register', { email, password })
+}
+
 export async function verifyOTP(email: string, otp: string): Promise<SignInResult> {
-  const { data, error } = await insforge.auth.verifyEmail({ email, otp })
-  if (error) throw error
-  return { user: (data?.user ?? null) as AuthUser | null }
+  return api<SignInResult>('POST', '/auth/verify-email', { email, otp })
 }
 
 export async function resendOTP(email: string): Promise<void> {
-  await insforge.auth.resendVerificationEmail({ email })
+  await api<void>('POST', '/auth/resend-otp', { email })
 }
 
 export async function signOut(): Promise<void> {
-  await insforge.auth.signOut()
+  await api<void>('POST', '/auth/logout')
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
-  const { data } = await insforge.auth.getCurrentUser()
-  return (data?.user ?? null) as AuthUser | null
-}
-
-export async function signInWithGoogle(redirectTo: string): Promise<void> {
-  await insforge.auth.signInWithOAuth({ provider: 'google', redirectTo })
+export async function signInWithGoogle(_redirectTo: string): Promise<void> {
+  const baseUrl = import.meta.env.VITE_API_URL as string
+  window.location.href = `${baseUrl}/auth/google`
 }
 
 export async function setProfile(profile: ProfileData): Promise<ProfileData> {
-  const { data, error } = await insforge.auth.setProfile({
-    name: profile.name ?? null,
-    avatar_url: profile.avatar_url ?? null,
-  })
-  if (error) throw error
-  return (data ?? profile) as ProfileData
+  return api<ProfileData>('PATCH', '/user-profiles/me', profile)
 }
 
 export async function uploadAvatar(file: File): Promise<{ url: string }> {
-  const { data, error } = await insforge.storage.from('avatars').uploadAuto(file)
-  if (error) throw error
-  return { url: data!.url }
+  const baseUrl = import.meta.env.VITE_API_URL as string
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${baseUrl}/auth/avatar`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    let message = `Upload failed with status ${response.status}`
+    try {
+      const payload = await response.json()
+      if (typeof payload?.error === 'string') message = payload.error
+    } catch {
+      // ignore
+    }
+    throw new ApiError(message, response.status)
+  }
+
+  return response.json() as Promise<{ url: string }>
 }
 
-export async function sendResetEmail(email: string, redirectTo: string): Promise<void> {
-  const { error } = await insforge.auth.sendResetPasswordEmail({ email, redirectTo })
-  if (error) throw error
+export async function sendResetEmail(email: string, _redirectTo: string): Promise<void> {
+  await api<void>('POST', '/auth/reset-password/request', { email })
 }
 
 export async function verifyResetToken(email: string, code: string): Promise<{ token: string }> {
-  const { data, error } = await insforge.auth.exchangeResetPasswordToken({ email, code })
-  if (error) throw error
-  return { token: data!.token }
+  return api<{ token: string }>('POST', '/auth/reset-password/verify', { email, code })
 }
 
 export async function resetPassword(newPassword: string, otp: string): Promise<void> {
-  const { error } = await insforge.auth.resetPassword({ newPassword, otp })
-  if (error) throw error
+  await api<void>('POST', '/auth/reset-password/confirm', { newPassword, otp })
 }
 
-export async function checkIsAdmin(userId: string): Promise<boolean> {
-  const { data } = await insforge.database
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', userId)
-    .maybeSingle()
-  return !!data
+export async function checkIsAdmin(_userId: string): Promise<boolean> {
+  try {
+    await api<unknown[]>('GET', '/admin/users')
+    return true
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) return false
+    throw err
+  }
 }

@@ -1,20 +1,12 @@
 /**
- * notesService — Slice 1 stub.
- * Forwards to InsForge internally. Slice 4 will replace with real apiClient calls.
+ * notesService — real implementation using apiClient.
+ * Slice 4: replaced InsForge stubs with direct apiClient calls.
  */
-import { insforge } from '../lib/insforge'
+import { api } from '../lib/apiClient'
 import type { TaskNote } from '../types'
 
-export async function getNotesByTask(userId: string, taskId: string): Promise<TaskNote[]> {
-  const { data, error } = await insforge
-    .database.from('task_notes')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('task_id', taskId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data as TaskNote[]
+export async function getNotesByTask(_userId: string, taskId: string): Promise<TaskNote[]> {
+  return api<TaskNote[]>('GET', `/task-notes?taskId=${encodeURIComponent(taskId)}`)
 }
 
 export async function createNote(input: {
@@ -22,36 +14,15 @@ export async function createNote(input: {
   content: string
   user_id: string
 }): Promise<TaskNote> {
-  const { user_id, ...rest } = input
-  const { data, error } = await insforge
-    .database.from('task_notes')
-    .insert([{ ...rest, user_id }])
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as TaskNote
+  const { user_id, ...body } = input
+  void user_id
+  return api<TaskNote>('POST', '/task-notes', body)
 }
 
-export async function updateNote(id: string, userId: string, content: string): Promise<TaskNote> {
-  const { data, error } = await insforge
-    .database.from('task_notes')
-    .update({ content })
-    .eq('id', id)
-    .eq('user_id', userId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as TaskNote
+export async function updateNote(id: string, _userId: string, content: string): Promise<TaskNote> {
+  return api<TaskNote>('PATCH', `/task-notes/${encodeURIComponent(id)}`, { content })
 }
 
-export async function deleteNote(id: string, userId: string): Promise<void> {
-  const { error } = await insforge
-    .database.from('task_notes')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', userId)
-
-  if (error) throw error
+export async function deleteNote(id: string, _userId: string): Promise<void> {
+  await api<void>('DELETE', `/task-notes/${encodeURIComponent(id)}`)
 }

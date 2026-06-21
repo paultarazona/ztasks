@@ -1,9 +1,8 @@
 /**
- * tasksService — Slice 1 service boundary.
- * Task CRUD functions use apiClient; pending-count helpers remain temporary InsForge adapters until their SDD tasks run.
+ * tasksService — real implementation using apiClient.
+ * Slice 4: replaced InsForge stub (getPendingTaskCounts) with real apiClient calls.
  */
 import { api } from '../lib/apiClient'
-import { insforge } from '../lib/insforge'
 import type { Task, Priority, TaskStatus } from '../types'
 
 export interface CreateTaskInput {
@@ -71,18 +70,7 @@ export async function reorderTasks(
 }
 
 export async function getPendingTaskCounts(
-  userId: string,
+  _userId: string,
 ): Promise<{ tasks: Array<{ category_id: string; status_id: string }>; statuses: TaskStatus[] }> {
-  const [tasksResult, statusesResult] = await Promise.all([
-    insforge.database.from('tasks').select('category_id,status_id').eq('user_id', userId),
-    insforge.database.from('task_statuses').select('id,name').eq('user_id', userId),
-  ])
-
-  if (tasksResult.error) throw tasksResult.error
-  if (statusesResult.error) throw statusesResult.error
-
-  return {
-    tasks: (tasksResult.data ?? []) as Array<{ category_id: string; status_id: string }>,
-    statuses: (statusesResult.data ?? []) as TaskStatus[],
-  }
+  return api('GET', '/tasks/pending-counts')
 }

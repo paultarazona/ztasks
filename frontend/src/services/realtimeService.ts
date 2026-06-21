@@ -1,8 +1,10 @@
 /**
- * realtimeService — Slice 1 stub.
- * Wraps InsForge realtime internally. Slice 5 will replace with real EventSource.
+ * realtimeService — EventSource-based SSE subscriptions for realtime updates.
+ * Connects to the backend SSE endpoints at /realtime/* using the browser's
+ * native EventSource API with credentials (cookies) forwarded.
  */
-import { insforge } from '../lib/insforge'
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export type TaskEventType = 'task_created' | 'task_updated' | 'task_deleted'
 export type FeedbackEventType = 'INSERT_feedback' | 'UPDATE_feedback' | 'DELETE_feedback'
@@ -20,106 +22,95 @@ export interface FeedbackEventHandlers {
 }
 
 /**
- * Subscribe to task domain events for a given channel.
- * Returns a cleanup function that removes listeners and unsubscribes.
+ * Subscribe to task domain events for a given user + category channel.
+ * Opens an SSE connection to /realtime/tasks/:categoryId.
+ * The userId is authenticated server-side; only categoryId is passed in the URL.
+ * Returns a cleanup function that closes the EventSource connection.
  */
 export function subscribeToTaskChannel(
-  userId: string,
+  _userId: string,
   categoryId: string,
   handlers: TaskEventHandlers,
 ): () => void {
-  const channel = `tasks:${userId}:${categoryId}`
+  const es = new EventSource(`${BASE_URL}/realtime/tasks/${categoryId}`, {
+    withCredentials: true,
+  })
 
-  const handleCreated = (payload: { task?: unknown }) => handlers.onTaskCreated?.(payload)
-  const handleUpdated = (payload: { task?: unknown }) => handlers.onTaskUpdated?.(payload)
-  const handleDeleted = (payload: { taskId?: string }) => handlers.onTaskDeleted?.(payload)
+  es.addEventListener('task_created', (e: MessageEvent) => {
+    const payload = JSON.parse(e.data)
+    handlers.onTaskCreated?.(payload)
+  })
 
-  insforge.realtime.on('task_created', handleCreated)
-  insforge.realtime.on('task_updated', handleUpdated)
-  insforge.realtime.on('task_deleted', handleDeleted)
+  es.addEventListener('task_updated', (e: MessageEvent) => {
+    const payload = JSON.parse(e.data)
+    handlers.onTaskUpdated?.(payload)
+  })
 
-  const connectAndSubscribe = async () => {
-    try {
-      if (!insforge.realtime.isConnected) {
-        await insforge.realtime.connect()
-      }
-      await insforge.realtime.subscribe(channel)
-    } catch {
-      // Realtime is additive; DB mutations still work if the socket is unavailable.
-    }
-  }
+  es.addEventListener('task_deleted', (e: MessageEvent) => {
+    const payload = JSON.parse(e.data)
+    handlers.onTaskDeleted?.(payload)
+  })
 
-  connectAndSubscribe()
-
-  return () => {
-    insforge.realtime.off('task_created', handleCreated)
-    insforge.realtime.off('task_updated', handleUpdated)
-    insforge.realtime.off('task_deleted', handleDeleted)
-    insforge.realtime.unsubscribe(channel)
-  }
+  return () => es.close()
 }
 
 /**
- * Publish a task event to the channel.
+ * Publish a task event — no-op: realtime events are pushed from the server.
+ * Client-side publish is not needed with the SSE model.
  */
 export async function publishTaskEvent(
-  userId: string,
-  categoryId: string,
-  event: string,
-  payload: Record<string, unknown>,
+  _userId: string,
+  _categoryId: string,
+  _event: string,
+  _payload: Record<string, unknown>,
 ): Promise<void> {
-  try {
-    await insforge.realtime.publish(`tasks:${userId}:${categoryId}`, event, payload)
-  } catch {
-    // Realtime must not block the persisted DB mutation flow.
-  }
+  // No-op: realtime events are pushed from the server via SSE.
 }
 
 /**
  * Subscribe to feedback admin events.
- * Returns a cleanup function.
+ * Opens an SSE connection to /realtime/feedback.
+ * Calls onInsert/onUpdate/onDelete when the corresponding events arrive.
+ * Returns a cleanup function that closes the EventSource connection.
  */
 export function subscribeToFeedbackChannel(handlers: FeedbackEventHandlers): () => void {
-  const handleInsert = () => handlers.onInsert?.()
-  const handleUpdate = () => handlers.onUpdate?.()
-  const handleDelete = () => handlers.onDelete?.()
+  const es = new EventSource(`${BASE_URL}/realtime/feedback`, {
+    withCredentials: true,
+  })
 
-  insforge.realtime.on('INSERT_feedback', handleInsert)
-  insforge.realtime.on('UPDATE_feedback', handleUpdate)
-  insforge.realtime.on('DELETE_feedback', handleDelete)
+  es.addEventListener('feedback_created', () => {
+    handlers.onInsert?.()
+  })
 
-  const connectAndSubscribe = async () => {
-    try {
-      if (insforge.realtime.isConnected) {
-        await insforge.realtime.subscribe('feedback')
-      } else {
-        await insforge.realtime.connect()
-        await insforge.realtime.subscribe('feedback')
-      }
-    } catch {
-      // Best-effort
-    }
-  }
+  es.addEventListener('feedback_updated', () => {
+    handlers.onUpdate?.()
+  })
 
-  connectAndSubscribe()
+  es.addEventListener('feedback_deleted', () => {
+    handlers.onDelete?.()
+  })
 
-  return () => {
-    insforge.realtime.off('INSERT_feedback', handleInsert)
-    insforge.realtime.off('UPDATE_feedback', handleUpdate)
-    insforge.realtime.off('DELETE_feedback', handleDelete)
-  }
+  return () => es.close()
 }
 
 /**
- * Generic subscribe for future use (Slice 5 real EventSource signature).
- * Stub: returns no-op cleanup during Slice 1.
+ * Generic SSE channel subscription.
+ * Constructs an EventSource at /realtime/:channel and maps the `message`
+ * event to the onMessage handler.
+ * Returns a cleanup function that closes the EventSource connection.
  */
 export function subscribe(
-  _channel: string,
-  _handlers: Record<string, (payload: unknown) => void>,
+  channel: string,
+  handlers: Record<string, (payload: unknown) => void>,
 ): () => void {
-  void _channel
-  void _handlers
-  // Slice 5 will wire this to EventSource
-  return () => {}
+  const es = new EventSource(`${BASE_URL}/realtime/${channel}`, {
+    withCredentials: true,
+  })
+
+  es.addEventListener('message', (e: MessageEvent) => {
+    const payload = JSON.parse(e.data)
+    handlers.onMessage?.(payload)
+  })
+
+  return () => es.close()
 }

@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { notFound } from './shared/errors'
 import { authRouter } from './auth/routes'
 import { avatarRouter } from './auth/avatar'
@@ -14,6 +15,13 @@ import { realtimeRouter } from './realtime/routes'
 
 export function createApp() {
   const app = new Hono()
+
+  app.use(cors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }))
 
   app.get('/health', (c) => c.json({ status: 'ok' }))
 

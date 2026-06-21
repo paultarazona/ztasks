@@ -1,7 +1,3 @@
-/**
- * authService — real implementation using apiClient.
- * Slice 4: replaced InsForge stubs with direct apiClient calls.
- */
 import { api, ApiError } from '../lib/apiClient'
 import type { AuthUser } from '../hooks/useAuthStore'
 
@@ -52,7 +48,7 @@ export async function signOut(): Promise<void> {
   await api<void>('POST', '/auth/sign-out')
 }
 
-export async function signInWithGoogle(_redirectTo: string): Promise<void> {
+export async function signInWithGoogle(): Promise<void> {
   const baseUrl = import.meta.env.VITE_API_URL as string
   window.location.href = `${baseUrl}/auth/google`
 }
@@ -86,7 +82,7 @@ export async function uploadAvatar(file: File): Promise<{ url: string }> {
   return response.json() as Promise<{ url: string }>
 }
 
-export async function sendResetEmail(email: string, _redirectTo: string): Promise<void> {
+export async function sendResetEmail(email: string): Promise<void> {
   await api<void>('POST', '/auth/reset-password/request', { email })
 }
 
@@ -98,7 +94,7 @@ export async function resetPassword(newPassword: string, otp: string): Promise<v
   await api<void>('POST', '/auth/reset-password/confirm', { newPassword, otp })
 }
 
-export async function checkIsAdmin(_userId: string): Promise<boolean> {
+export async function checkIsAdmin(): Promise<boolean> {
   try {
     await api<unknown[]>('GET', '/admin/users')
     return true

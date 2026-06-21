@@ -1,19 +1,15 @@
 import { Hono } from 'hono'
 import { auth } from '../shared/auth'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 
 const NOT_IMPLEMENTED = { error: 'Not implemented', code: 'NOT_IMPLEMENTED' }
 
-export const authRouter = new Hono()
+export const authRouter = new Hono<AppEnv>()
 
 // GET /auth/me — returns the authenticated user's profile fields
 authRouter.get('/me', requireAuth, (c) => {
-  const user = c.get('user' as never) as {
-    id: string
-    email: string
-    name: string
-    image?: string | null
-  }
+  const user = c.get('user')
   return c.json({ id: user.id, email: user.email, name: user.name, avatar_url: user.image ?? null })
 })
 

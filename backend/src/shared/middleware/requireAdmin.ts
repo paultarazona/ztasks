@@ -1,4 +1,5 @@
 import type { Context, Next } from 'hono'
+import type { AppEnv } from '../auth'
 import { eq } from 'drizzle-orm'
 import { getSession } from '../auth'
 import { unauthorized, forbidden } from '../errors'
@@ -9,13 +10,13 @@ import { adminUsers } from '../../db/schema/admin-users'
  * Guards a route for admin-only access.
  * Validates the session, then checks the admin_users table for the user's ID.
  */
-export async function requireAdmin(c: Context, next: Next): Promise<Response | void> {
+export async function requireAdmin(c: Context<AppEnv>, next: Next): Promise<Response | void> {
   const session = await getSession(c.req.raw)
   if (!session) {
     return c.json(unauthorized(), 401)
   }
 
-  c.set('user' as never, session.user)
+  c.set('user', session.user)
 
   const db = getDb()
   const rows = await db

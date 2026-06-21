@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { taskStatuses } from '../db/schema'
 
-export const taskStatusesRouter = new Hono()
+export const taskStatusesRouter = new Hono<AppEnv>()
 
 taskStatusesRouter.use('*', requireAuth)
 

@@ -112,7 +112,7 @@ describe('authService', () => {
     apiMock.mockResolvedValueOnce([{ id: 'u1' }])
 
     const { checkIsAdmin } = await import('./authService')
-    const result = await checkIsAdmin('u1')
+    const result = await checkIsAdmin()
 
     expect(apiMock).toHaveBeenCalledWith('GET', '/admin/users')
     expect(result).toBe(true)
@@ -122,7 +122,7 @@ describe('authService', () => {
     apiMock.mockRejectedValueOnce(new ApiError('Forbidden', 403, 'FORBIDDEN'))
 
     const { checkIsAdmin } = await import('./authService')
-    const result = await checkIsAdmin('u1')
+    const result = await checkIsAdmin()
 
     expect(result).toBe(false)
   })

@@ -139,7 +139,7 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setError(null)
 
     try {
-      await authService.sendResetEmail(user.email, `${window.location.origin}/auth`)
+      await authService.sendResetEmail(user.email)
       setPasswordStep('verify')
       setResetOtp(['', '', '', '', '', ''])
       setTimeout(() => resetOtpRefs.current[0]?.focus(), 100)

@@ -1,18 +1,19 @@
 import { Hono } from 'hono'
 import { eq, and } from 'drizzle-orm'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { tasks } from '../db/schema'
 import { sseManager } from '../shared/sse'
 import { badRequest, notFound } from '../shared/errors'
 
-export const tasksRouter = new Hono()
+export const tasksRouter = new Hono<AppEnv>()
 
 tasksRouter.use('*', requireAuth)
 
 // GET /tasks?categoryId — scoped to authenticated user and optional category
 tasksRouter.get('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const categoryIdParam = c.req.query('categoryId')
 
   let rows: typeof tasks.$inferSelect[]
@@ -31,7 +32,7 @@ tasksRouter.get('/', async (c) => {
 
 // GET /tasks/pending-counts — count of pending tasks per category
 tasksRouter.get('/pending-counts', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const rows = await db.select().from(tasks).where(eq(tasks.userId, user.id))
   const counts: Record<number, number> = {}
   for (const task of rows) {
@@ -44,7 +45,7 @@ tasksRouter.get('/pending-counts', async (c) => {
 
 // POST /tasks — create a new task and broadcast SSE event
 tasksRouter.post('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const body = await c.req.json<{
     title: string
     categoryId?: number
@@ -82,8 +83,9 @@ tasksRouter.post('/', async (c) => {
 
 // PATCH /tasks/:id — update a task (ownership check enforced)
 tasksRouter.patch('/:id', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db
     .select()
@@ -112,8 +114,9 @@ tasksRouter.patch('/:id', async (c) => {
 
 // DELETE /tasks/:id — delete a task (ownership check enforced)
 tasksRouter.delete('/:id', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db
     .select()
@@ -136,8 +139,9 @@ tasksRouter.delete('/:id', async (c) => {
 
 // PATCH /tasks/:id/reorder — update position field
 tasksRouter.patch('/:id/reorder', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
   const body = await c.req.json<{ position: number }>()
 
   const [existing] = await db

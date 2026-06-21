@@ -1,15 +1,10 @@
-/**
- * tasksService — real implementation using apiClient.
- * Slice 4: replaced InsForge stub (getPendingTaskCounts) with real apiClient calls.
- */
 import { api } from '../lib/apiClient'
-import type { Task, Priority, TaskStatus } from '../types'
+import type { Task, Priority } from '../types'
 
 export interface CreateTaskInput {
   title: string
   category_id: string
   status_id: string
-  user_id: string
   description?: string
   priority?: Priority
   due_date?: string | null
@@ -17,7 +12,6 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput {
   id: string
-  user_id: string
   title?: string
   description?: string | null
   priority?: Priority
@@ -27,41 +21,26 @@ export interface UpdateTaskInput {
 
 export interface ReorderTasksInput {
   id: string
-  user_id: string
   updates: Array<{ id: string; position: number }>
 }
 
-export function getTasksByCategory(categoryId: string): Promise<Task[]>
-export function getTasksByCategory(_userId: string, categoryId: string): Promise<Task[]>
-export function getTasksByCategory(
-  userIdOrCategoryId: string,
-  maybeCategoryId?: string,
-): Promise<Task[]> {
-  const categoryId = maybeCategoryId ?? userIdOrCategoryId
+export function getTasksByCategory(categoryId: string): Promise<Task[]> {
   return api<Task[]>('GET', `/tasks?categoryId=${encodeURIComponent(categoryId)}`)
 }
 
 export function createTask(input: CreateTaskInput): Promise<Task> {
-  const { user_id, ...body } = input
-  void user_id
-  return api<Task>('POST', '/tasks', body)
+  return api<Task>('POST', '/tasks', input)
 }
 
-export function updateTask({ id, user_id, ...body }: UpdateTaskInput): Promise<Task> {
-  void user_id
+export function updateTask({ id, ...body }: UpdateTaskInput): Promise<Task> {
   return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, body)
 }
 
-export async function deleteTask(id: string, userId: string): Promise<void> {
-  void userId
+export async function deleteTask(id: string): Promise<void> {
   await api<void>('DELETE', `/tasks/${encodeURIComponent(id)}`)
 }
 
-export async function reorderTasks(
-  userId: string,
-  updates: Array<{ id: string; position: number }>,
-): Promise<void> {
-  void userId
+export async function reorderTasks(updates: Array<{ id: string; position: number }>): Promise<void> {
   await Promise.all(
     updates.map(({ id, position }) =>
       api<void>('PATCH', `/tasks/${encodeURIComponent(id)}/reorder`, { position }),
@@ -69,8 +48,6 @@ export async function reorderTasks(
   )
 }
 
-export async function getPendingTaskCounts(
-  _userId: string,
-): Promise<{ tasks: Array<{ category_id: string; status_id: string }>; statuses: TaskStatus[] }> {
+export async function getPendingTaskCounts(): Promise<Record<string, number>> {
   return api('GET', '/tasks/pending-counts')
 }

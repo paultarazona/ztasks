@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { requireAdmin } from '../shared/middleware/requireAdmin'
 import { db } from '../shared/db'
@@ -7,11 +8,11 @@ import { feedback } from '../db/schema'
 import { badRequest, notFound } from '../shared/errors'
 import { sseManager } from '../shared/sse'
 
-export const feedbackRouter = new Hono()
+export const feedbackRouter = new Hono<AppEnv>()
 
 // POST /feedback — authenticated user submits feedback
 feedbackRouter.post('/', requireAuth, async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const body = await c.req.json<{ message: string }>()
 
   if (!body.message) {
@@ -36,7 +37,8 @@ feedbackRouter.get('/', requireAdmin, async (c) => {
 
 // PATCH /feedback/:id — admin only
 feedbackRouter.patch('/:id', requireAdmin, async (c) => {
-  const id = parseInt(c.req.param('id'), 10)
+  const id = parseInt(c.req.param('id') ?? '', 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db.select().from(feedback).where(eq(feedback.id, id))
   if (!existing) {
@@ -55,7 +57,8 @@ feedbackRouter.patch('/:id', requireAdmin, async (c) => {
 
 // DELETE /feedback/:id — admin only
 feedbackRouter.delete('/:id', requireAdmin, async (c) => {
-  const id = parseInt(c.req.param('id'), 10)
+  const id = parseInt(c.req.param('id') ?? '', 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db.select().from(feedback).where(eq(feedback.id, id))
   if (!existing) {

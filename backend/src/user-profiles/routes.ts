@@ -1,16 +1,17 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { userProfiles } from '../db/schema'
 
-export const userProfilesRouter = new Hono()
+export const userProfilesRouter = new Hono<AppEnv>()
 
 userProfilesRouter.use('*', requireAuth)
 
 // GET /user-profiles/me — returns the authenticated user's profile
 userProfilesRouter.get('/me', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
 
   const [profile] = await db
     .select()
@@ -23,7 +24,7 @@ userProfilesRouter.get('/me', async (c) => {
 
 // PATCH /user-profiles/me — update the authenticated user's profile
 userProfilesRouter.patch('/me', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const body = await c.req.json<{ displayName?: string; avatarUrl?: string }>()
 
   const [existing] = await db

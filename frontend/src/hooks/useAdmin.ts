@@ -9,7 +9,7 @@ export function useAdmin() {
     queryKey: ['admin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false
-      return authService.checkIsAdmin(user.id)
+      return authService.checkIsAdmin()
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 60 * 24, // 24 hours

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
+import type { AppEnv } from './shared/auth'
 import { cors } from 'hono/cors'
-import { notFound } from './shared/errors'
+import { notFound, internalError } from './shared/errors'
 import { authRouter } from './auth/routes'
 import { avatarRouter } from './auth/avatar'
 import { resetRouter } from './auth/reset'
@@ -15,7 +16,7 @@ import { docsRouter } from './docs/routes'
 import { realtimeRouter } from './realtime/routes'
 
 export function createApp() {
-  const app = new Hono()
+  const app = new Hono<AppEnv>()
 
   app.use(cors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
@@ -47,6 +48,11 @@ export function createApp() {
 
   // Docs
   app.route('/docs', docsRouter)
+
+  app.onError((err, c) => {
+    console.error(err)
+    return c.json(internalError(), 500)
+  })
 
   // 404 fallback for all unmatched routes
   app.notFound((c) => c.json(notFound(), 404))

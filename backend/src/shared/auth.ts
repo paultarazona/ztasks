@@ -34,6 +34,9 @@ export type Session = {
   user: { id: string; email: string; name: string; emailVerified: boolean; image?: string | null }
 }
 
+export type SessionUser = Session['user']
+export type AppEnv = { Variables: { user: SessionUser } }
+
 export async function getSession(req: Request): Promise<Session | null> {
   return auth.api.getSession({ headers: req.headers }) as Promise<Session | null>
 }

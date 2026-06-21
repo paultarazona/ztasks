@@ -11,6 +11,11 @@ vi.mock('../shared/db', () => ({
   },
 }))
 
+// Mock getSession so requireAuth never hits a real DB
+vi.mock('../shared/auth', () => ({
+  getSession: vi.fn(),
+}))
+
 // Mock the sseManager to avoid side-effects and inspect calls
 vi.mock('../shared/sse', () => ({
   sseManager: {
@@ -21,21 +26,27 @@ vi.mock('../shared/sse', () => ({
   SSEManager: vi.fn(),
 }))
 
+import { getSession } from '../shared/auth'
 import { realtimeRouter } from './routes'
 
-function makeApp(user?: { id: string; email: string; name: string; avatar_url: string | null }) {
+const mockGetSession = vi.mocked(getSession)
+
+const stubUser = { id: 'u1', email: 'u@test.com', name: 'User', image: null }
+const stubSession = {
+  session: { id: 'sess-1', userId: 'u1', expiresAt: new Date(), token: 'tok' },
+  user: stubUser,
+}
+
+function makeApp(authenticated = false) {
   const app = new Hono()
-  app.use('*', async (c, next) => {
-    if (user) {
-      c.set('user' as never, user)
-    }
-    await next()
-  })
+  if (authenticated) {
+    mockGetSession.mockResolvedValue(stubSession as never)
+  } else {
+    mockGetSession.mockResolvedValue(null)
+  }
   app.route('/realtime', realtimeRouter)
   return app
 }
-
-const stubUser = { id: 'u1', email: 'u@test.com', name: 'User', avatar_url: null }
 
 describe('GET /realtime/tasks/:categoryId', () => {
   beforeEach(() => {
@@ -43,13 +54,13 @@ describe('GET /realtime/tasks/:categoryId', () => {
   })
 
   it('returns 401 when no user is authenticated', async () => {
-    const app = makeApp()
+    const app = makeApp(false)
     const res = await app.request('/realtime/tasks/42')
     expect(res.status).toBe(401)
   })
 
   it('returns text/event-stream content-type when user is authenticated', async () => {
-    const app = makeApp(stubUser)
+    const app = makeApp(true)
     const res = await app.request('/realtime/tasks/42')
     // SSE response must have the correct content-type header
     expect(res.headers.get('content-type')).toContain('text/event-stream')
@@ -62,7 +73,7 @@ describe('GET /realtime/feedback', () => {
   })
 
   it('returns 401 when no user is authenticated', async () => {
-    const app = makeApp()
+    const app = makeApp(false)
     const res = await app.request('/realtime/feedback')
     expect(res.status).toBe(401)
   })

@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { notFound } from './shared/errors'
+import type { AppEnv } from './shared/auth'
+import { cors } from 'hono/cors'
+import { notFound, internalError } from './shared/errors'
 import { authRouter } from './auth/routes'
 import { avatarRouter } from './auth/avatar'
 import { resetRouter } from './auth/reset'
@@ -9,11 +11,19 @@ import { taskStatusesRouter } from './task-statuses/routes'
 import { taskNotesRouter } from './task-notes/routes'
 import { feedbackRouter } from './feedback/routes'
 import { userProfilesRouter } from './user-profiles/routes'
+import { adminRouter } from './admin/routes'
 import { docsRouter } from './docs/routes'
 import { realtimeRouter } from './realtime/routes'
 
 export function createApp() {
-  const app = new Hono()
+  const app = new Hono<AppEnv>()
+
+  app.use(cors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }))
 
   app.get('/health', (c) => c.json({ status: 'ok' }))
 
@@ -30,11 +40,19 @@ export function createApp() {
   app.route('/feedback', feedbackRouter)
   app.route('/user-profiles', userProfilesRouter)
 
+  // Admin
+  app.route('/admin', adminRouter)
+
   // Realtime SSE
   app.route('/realtime', realtimeRouter)
 
   // Docs
   app.route('/docs', docsRouter)
+
+  app.onError((err, c) => {
+    console.error(err)
+    return c.json(internalError(), 500)
+  })
 
   // 404 fallback for all unmatched routes
   app.notFound((c) => c.json(notFound(), 404))

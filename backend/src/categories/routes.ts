@@ -1,24 +1,25 @@
 import { Hono } from 'hono'
 import { eq, and } from 'drizzle-orm'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { categories } from '../db/schema'
 import { badRequest, notFound } from '../shared/errors'
 
-export const categoriesRouter = new Hono()
+export const categoriesRouter = new Hono<AppEnv>()
 
 categoriesRouter.use('*', requireAuth)
 
 // GET /categories — all categories for the authenticated user
 categoriesRouter.get('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const rows = await db.select().from(categories).where(eq(categories.userId, user.id))
   return c.json(rows)
 })
 
 // POST /categories — create a new category
 categoriesRouter.post('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const body = await c.req.json<{
     name: string
     color?: string
@@ -44,8 +45,9 @@ categoriesRouter.post('/', async (c) => {
 
 // PATCH /categories/:id — update a category (ownership check enforced)
 categoriesRouter.patch('/:id', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db
     .select()
@@ -69,8 +71,9 @@ categoriesRouter.patch('/:id', async (c) => {
 
 // DELETE /categories/:id — soft delete (ownership check enforced)
 categoriesRouter.delete('/:id', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [existing] = await db
     .select()

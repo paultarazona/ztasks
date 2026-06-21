@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { sseManager } from '../shared/sse'
 import type { SSEStream } from '../shared/sse'
 
-export const realtimeRouter = new Hono()
+export const realtimeRouter = new Hono<AppEnv>()
 
 /**
  * GET /realtime/tasks/:categoryId
@@ -12,7 +13,7 @@ export const realtimeRouter = new Hono()
  * Sends a heartbeat comment every 30 seconds to keep the connection alive.
  */
 realtimeRouter.get('/tasks/:categoryId', requireAuth, (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const categoryId = c.req.param('categoryId')
   const channel = `tasks:${user.id}:${categoryId}`
 

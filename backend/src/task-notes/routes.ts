@@ -1,17 +1,18 @@
 import { Hono } from 'hono'
 import { eq, and } from 'drizzle-orm'
+import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { taskNotes, tasks } from '../db/schema'
 import { badRequest, notFound, forbidden } from '../shared/errors'
 
-export const taskNotesRouter = new Hono()
+export const taskNotesRouter = new Hono<AppEnv>()
 
 taskNotesRouter.use('*', requireAuth)
 
 // GET /task-notes?taskId — notes scoped to task ownership
 taskNotesRouter.get('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const taskIdParam = c.req.query('taskId')
 
   if (!taskIdParam) {
@@ -19,6 +20,7 @@ taskNotesRouter.get('/', async (c) => {
   }
 
   const taskId = parseInt(taskIdParam, 10)
+  if (isNaN(taskId)) return c.json(badRequest('taskId must be a number'), 400)
 
   // Verify task ownership via tasks table
   const [task] = await db
@@ -37,7 +39,7 @@ taskNotesRouter.get('/', async (c) => {
 
 // POST /task-notes — create a note (checks task ownership)
 taskNotesRouter.post('/', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const body = await c.req.json<{ taskId: number; content: string }>()
 
   if (!body.taskId || !body.content) {
@@ -64,8 +66,9 @@ taskNotesRouter.post('/', async (c) => {
 
 // DELETE /task-notes/:id — delete a note (ownership check via task)
 taskNotesRouter.delete('/:id', async (c) => {
-  const user = c.get('user' as never) as { id: string }
+  const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
 
   const [note] = await db.select().from(taskNotes).where(eq(taskNotes.id, id))
 

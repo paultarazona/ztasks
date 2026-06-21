@@ -65,7 +65,7 @@ export function AuthPage() {
   const handleGoogleAuth = async () => {
     setError('')
     try {
-      await authService.signInWithGoogle(`${window.location.origin}/dashboard`)
+      await authService.signInWithGoogle()
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Error al iniciar sesión con Google'))
     }
@@ -83,7 +83,7 @@ export function AuthPage() {
         setAuth(user)
 
         if (user) {
-          const isAdmin = await authService.checkIsAdmin(user.id)
+          const isAdmin = await authService.checkIsAdmin()
           navigate(isAdmin ? '/admin' : '/dashboard')
         } else {
           navigate('/dashboard')

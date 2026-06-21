@@ -61,14 +61,13 @@ describe('tasksService', () => {
     expect(apiMock).toHaveBeenCalledWith('GET', '/tasks?categoryId=category-1')
   })
 
-  it('creates a task through apiClient without sending user_id', async () => {
+  it('creates a task through apiClient', async () => {
     apiMock.mockResolvedValueOnce(task)
 
     const { createTask } = await import('./tasksService')
 
     await expect(
       createTask({
-        user_id: 'user-1',
         category_id: 'category-1',
         status_id: 'status-1',
         title: 'Task 1',
@@ -87,13 +86,13 @@ describe('tasksService', () => {
     })
   })
 
-  it('updates a task through apiClient without sending id or user_id', async () => {
+  it('updates a task through apiClient without sending id', async () => {
     apiMock.mockResolvedValueOnce({ ...task, title: 'Updated' })
 
     const { updateTask } = await import('./tasksService')
 
     await expect(
-      updateTask({ id: 'task-1', user_id: 'user-1', title: 'Updated' }),
+      updateTask({ id: 'task-1', title: 'Updated' }),
     ).resolves.toEqual({ ...task, title: 'Updated' })
     expect(apiMock).toHaveBeenCalledWith('PATCH', '/tasks/task-1', { title: 'Updated' })
   })
@@ -103,7 +102,7 @@ describe('tasksService', () => {
 
     const { deleteTask } = await import('./tasksService')
 
-    await expect(deleteTask('task-1', 'user-1')).resolves.toBeUndefined()
+    await expect(deleteTask('task-1')).resolves.toBeUndefined()
     expect(apiMock).toHaveBeenCalledWith('DELETE', '/tasks/task-1')
   })
 
@@ -113,7 +112,7 @@ describe('tasksService', () => {
     const { reorderTasks } = await import('./tasksService')
 
     await expect(
-      reorderTasks('user-1', [
+      reorderTasks([
         { id: 'task-1', position: 1 },
         { id: 'task-2', position: 2 },
       ]),
@@ -129,7 +128,6 @@ describe('tasksService', () => {
 
     await expect(
       createTask({
-        user_id: 'user-1',
         category_id: 'cat-1',
         status_id: 'status-1',
         title: 'Fail task',
@@ -138,11 +136,11 @@ describe('tasksService', () => {
   })
 
   it('getPendingTaskCounts calls GET /tasks/pending-counts', async () => {
-    const counts = { tasks: [], statuses: [] }
+    const counts = { 1: 3, 2: 1 }
     apiMock.mockResolvedValueOnce(counts)
 
     const { getPendingTaskCounts } = await import('./tasksService')
-    const result = await getPendingTaskCounts('user-1')
+    const result = await getPendingTaskCounts()
 
     expect(apiMock).toHaveBeenCalledWith('GET', '/tasks/pending-counts')
     expect(result).toEqual(counts)

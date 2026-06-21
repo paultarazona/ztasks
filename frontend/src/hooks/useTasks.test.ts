@@ -7,7 +7,7 @@ vi.mock('../services/tasksService', () => ({
   updateTask: vi.fn().mockResolvedValue({ id: '1', title: 'Updated' }),
   deleteTask: vi.fn().mockResolvedValue(undefined),
   reorderTasks: vi.fn().mockResolvedValue(undefined),
-  getPendingTaskCounts: vi.fn().mockResolvedValue({ tasks: [], statuses: [] }),
+  getPendingTaskCounts: vi.fn().mockResolvedValue({}),
 }))
 
 // insforge should NOT be imported directly by useTasks after refactor.

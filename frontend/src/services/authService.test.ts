@@ -57,51 +57,52 @@ describe('authService', () => {
     expect(result).toEqual(user)
   })
 
-  it('signIn calls POST /auth/login with email and password', async () => {
+  it('signIn calls POST /auth/sign-in/email with email and password', async () => {
     const user = { id: 'u1', email: 'test@test.com', name: 'Test' }
     apiMock.mockResolvedValueOnce({ user })
 
     const { signIn } = await import('./authService')
     const result = await signIn('test@test.com', 'pass123')
 
-    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/login', {
+    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/sign-in/email', {
       email: 'test@test.com',
       password: 'pass123',
     })
     expect(result).toEqual({ user })
   })
 
-  it('signOut calls POST /auth/logout', async () => {
+  it('signOut calls POST /auth/sign-out', async () => {
     apiMock.mockResolvedValueOnce(undefined)
 
     const { signOut } = await import('./authService')
     await signOut()
 
-    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/logout')
+    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/sign-out')
   })
 
-  it('signUp calls POST /auth/register', async () => {
-    const user = { id: 'u1', email: 'test@test.com', name: 'Test' }
-    apiMock.mockResolvedValueOnce({ user, requireEmailVerification: true })
+  it('signUp calls POST /auth/sign-up/email with name derived from email', async () => {
+    const user = { id: 'u1', email: 'test@test.com', name: 'test' }
+    apiMock.mockResolvedValueOnce({ user })
 
     const { signUp } = await import('./authService')
     const result = await signUp('test@test.com', 'pass123')
 
-    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/register', {
+    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/sign-up/email', {
       email: 'test@test.com',
       password: 'pass123',
+      name: 'test',
     })
-    expect(result).toEqual({ user, requireEmailVerification: true })
+    expect(result).toEqual({ user, requireEmailVerification: false })
   })
 
-  it('verifyOTP calls POST /auth/verify-email', async () => {
+  it('verifyOTP calls POST /auth/email-otp/verify-otp', async () => {
     const user = { id: 'u1', email: 'test@test.com', name: 'Test' }
     apiMock.mockResolvedValueOnce({ user })
 
     const { verifyOTP } = await import('./authService')
     await verifyOTP('test@test.com', '123456')
 
-    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/verify-email', {
+    expect(apiMock).toHaveBeenCalledWith('POST', '/auth/email-otp/verify-otp', {
       email: 'test@test.com',
       otp: '123456',
     })
@@ -111,7 +112,7 @@ describe('authService', () => {
     apiMock.mockResolvedValueOnce([{ id: 'u1' }])
 
     const { checkIsAdmin } = await import('./authService')
-    const result = await checkIsAdmin('u1')
+    const result = await checkIsAdmin()
 
     expect(apiMock).toHaveBeenCalledWith('GET', '/admin/users')
     expect(result).toBe(true)
@@ -121,7 +122,7 @@ describe('authService', () => {
     apiMock.mockRejectedValueOnce(new ApiError('Forbidden', 403, 'FORBIDDEN'))
 
     const { checkIsAdmin } = await import('./authService')
-    const result = await checkIsAdmin('u1')
+    const result = await checkIsAdmin()
 
     expect(result).toBe(false)
   })

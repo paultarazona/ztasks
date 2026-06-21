@@ -6,8 +6,6 @@ import * as realtimeService from '../services/realtimeService'
 import type { Task, Priority } from '../types'
 import type { CreateTaskFormData } from '../components/tasks/CreateTaskDialog'
 
-type TaskCountRow = Pick<Task, 'category_id' | 'status_id'>
-
 interface CreateTaskInput {
   title: string
   category_id: string
@@ -30,12 +28,6 @@ export function useTasks(categoryId?: string) {
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const queryKey = useMemo(() => ['tasks', categoryId, userId] as const, [categoryId, userId])
-
-  const getCurrentUserId = () => {
-    const currentUserId = useAuthStore.getState().user?.id
-    if (!currentUserId) throw new Error('User must be authenticated')
-    return currentUserId
-  }
 
   useEffect(() => {
     if (!categoryId || !userId) return
@@ -77,15 +69,14 @@ export function useTasks(categoryId?: string) {
     queryKey,
     queryFn: () => {
       if (!categoryId || !userId) return []
-      return tasksService.getTasksByCategory(userId, categoryId)
+      return tasksService.getTasksByCategory(categoryId)
     },
     enabled: !!categoryId && !!userId,
   })
 
   const createTask = useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const currentUserId = getCurrentUserId()
-      return tasksService.createTask({ ...input, user_id: currentUserId })
+      return tasksService.createTask(input)
     },
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
@@ -99,8 +90,7 @@ export function useTasks(categoryId?: string) {
 
   const updateTask = useMutation({
     mutationFn: async ({ id, ...input }: UpdateTaskInput) => {
-      const currentUserId = getCurrentUserId()
-      return tasksService.updateTask({ id, user_id: currentUserId, ...input })
+      return tasksService.updateTask({ id, ...input })
     },
     onMutate: async ({ id, ...input }) => {
       await queryClient.cancelQueries({ queryKey })
@@ -126,8 +116,7 @@ export function useTasks(categoryId?: string) {
 
   const deleteTask = useMutation({
     mutationFn: async (id: string) => {
-      const currentUserId = getCurrentUserId()
-      await tasksService.deleteTask(id, currentUserId)
+      await tasksService.deleteTask(id)
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey })
@@ -167,24 +156,7 @@ export function usePendingTaskCounts() {
 
   return useQuery({
     queryKey: ['pending-task-counts', userId],
-    queryFn: async () => {
-      const { tasks, statuses } = await tasksService.getPendingTaskCounts(userId!)
-
-      const completedStatusIds = new Set(
-        statuses
-          .filter((status) => status.name?.trim().toLocaleLowerCase() === 'completado')
-          .map((status) => status.id),
-      )
-
-      return (tasks as TaskCountRow[]).reduce<Record<string, number>>(
-        (counts, task) => {
-          if (completedStatusIds.has(task.status_id)) return counts
-          counts[task.category_id] = (counts[task.category_id] ?? 0) + 1
-          return counts
-        },
-        {},
-      )
-    },
+    queryFn: () => tasksService.getPendingTaskCounts(),
     enabled: !!userId,
   })
 }

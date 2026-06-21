@@ -29,6 +29,19 @@ tasksRouter.get('/', async (c) => {
   return c.json(rows)
 })
 
+// GET /tasks/pending-counts — count of pending tasks per category
+tasksRouter.get('/pending-counts', async (c) => {
+  const user = c.get('user' as never) as { id: string }
+  const rows = await db.select().from(tasks).where(eq(tasks.userId, user.id))
+  const counts: Record<number, number> = {}
+  for (const task of rows) {
+    if (task.categoryId != null) {
+      counts[task.categoryId] = (counts[task.categoryId] ?? 0) + 1
+    }
+  }
+  return c.json(counts)
+})
+
 // POST /tasks — create a new task and broadcast SSE event
 tasksRouter.post('/', async (c) => {
   const user = c.get('user' as never) as { id: string }

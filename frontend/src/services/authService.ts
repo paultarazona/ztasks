@@ -30,23 +30,26 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function signIn(email: string, password: string): Promise<SignInResult> {
-  return api<SignInResult>('POST', '/auth/login', { email, password })
+  const data = await api<{ user: AuthUser }>('POST', '/auth/sign-in/email', { email, password })
+  return { user: data.user ?? null }
 }
 
 export async function signUp(email: string, password: string): Promise<SignUpResult> {
-  return api<SignUpResult>('POST', '/auth/register', { email, password })
+  const name = email.split('@')[0]
+  const data = await api<{ user: AuthUser }>('POST', '/auth/sign-up/email', { email, password, name })
+  return { user: data.user ?? null, requireEmailVerification: false }
 }
 
 export async function verifyOTP(email: string, otp: string): Promise<SignInResult> {
-  return api<SignInResult>('POST', '/auth/verify-email', { email, otp })
+  return api<SignInResult>('POST', '/auth/email-otp/verify-otp', { email, otp })
 }
 
 export async function resendOTP(email: string): Promise<void> {
-  await api<void>('POST', '/auth/resend-otp', { email })
+  await api<void>('POST', '/auth/email-otp/send-verification-otp', { email, type: 'sign-in' })
 }
 
 export async function signOut(): Promise<void> {
-  await api<void>('POST', '/auth/logout')
+  await api<void>('POST', '/auth/sign-out')
 }
 
 export async function signInWithGoogle(_redirectTo: string): Promise<void> {

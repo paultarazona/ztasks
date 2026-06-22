@@ -6,6 +6,7 @@ import { db } from '../shared/db'
 import { tasks } from '../db/schema'
 import { sseManager } from '../shared/sse'
 import { badRequest, notFound } from '../shared/errors'
+import { snakeCaseKeys } from '../shared/snake'
 
 export const tasksRouter = new Hono<AppEnv>()
 
@@ -75,7 +76,7 @@ tasksRouter.post('/', async (c) => {
   const categoryId = inserted.categoryId
   sseManager.broadcast(`tasks:${user.id}:${categoryId}`, {
     type: 'task_created',
-    payload: inserted,
+    payload: snakeCaseKeys(inserted),
   })
 
   return c.json(inserted, 201)
@@ -106,7 +107,7 @@ tasksRouter.patch('/:id', async (c) => {
 
   sseManager.broadcast(`tasks:${user.id}:${updated.categoryId}`, {
     type: 'task_updated',
-    payload: updated,
+    payload: snakeCaseKeys(updated),
   })
 
   return c.json(updated)
@@ -131,7 +132,7 @@ tasksRouter.delete('/:id', async (c) => {
 
   sseManager.broadcast(`tasks:${user.id}:${existing.categoryId}`, {
     type: 'task_deleted',
-    payload: { id },
+    payload: { id: String(existing.id) },
   })
 
   return c.json({ success: true })

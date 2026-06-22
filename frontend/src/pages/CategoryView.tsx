@@ -10,7 +10,7 @@ type ViewMode = 'kanban' | 'list'
 
 export function CategoryView() {
   const { categoryId } = useParams<{ categoryId: string }>()
-  const { data: categories } = useCategories()
+  const { data: categories, isLoading } = useCategories()
   const category = categories?.find((c) => c.id === categoryId)
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
 
@@ -30,10 +30,18 @@ export function CategoryView() {
     )
   }
 
-  if (!category) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-surface-400">Cargando...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+      </div>
+    )
+  }
+
+  if (!category) {
+    return (
+      <div className="flex items-center justify-center h-full text-surface-400 dark:text-surface-500">
+        <p>Category not found.</p>
       </div>
     )
   }

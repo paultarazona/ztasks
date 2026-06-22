@@ -29,11 +29,21 @@ export function getTasksByCategory(categoryId: string): Promise<Task[]> {
 }
 
 export function createTask(input: CreateTaskInput): Promise<Task> {
-  return api<Task>('POST', '/tasks', input)
+  const { category_id, status_id, due_date, priority: _priority, ...rest } = input
+  return api<Task>('POST', '/tasks', {
+    ...rest,
+    categoryId: category_id,
+    statusId: status_id,
+    dueDate: due_date ?? null,
+  })
 }
 
-export function updateTask({ id, ...body }: UpdateTaskInput): Promise<Task> {
-  return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, body)
+export function updateTask({ id, status_id, due_date, ...rest }: UpdateTaskInput): Promise<Task> {
+  return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, {
+    ...rest,
+    statusId: status_id,
+    dueDate: due_date ?? null,
+  })
 }
 
 export async function deleteTask(id: string): Promise<void> {

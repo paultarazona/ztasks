@@ -5,6 +5,7 @@ export const categories = pgTable('categories', {
   userId: text('user_id').notNull(),
   name: text('name').notNull(),
   color: text('color'),
+  type: text('type').$type<'folder' | 'list'>().default('list').notNull(),
   position: integer('position'),
   isDeleted: boolean('is_deleted').default(false),
   createdAt: timestamp('created_at').defaultNow(),

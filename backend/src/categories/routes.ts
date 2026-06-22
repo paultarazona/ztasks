@@ -23,6 +23,7 @@ categoriesRouter.post('/', async (c) => {
   const body = await c.req.json<{
     name: string
     color?: string
+    type?: 'folder' | 'list'
     position?: number
   }>()
 
@@ -36,6 +37,7 @@ categoriesRouter.post('/', async (c) => {
       userId: user.id,
       name: body.name,
       color: body.color ?? null,
+      type: body.type ?? 'list',
       position: body.position ?? null,
     })
     .returning()

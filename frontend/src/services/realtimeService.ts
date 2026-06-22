@@ -10,9 +10,9 @@ export type TaskEventType = 'task_created' | 'task_updated' | 'task_deleted'
 export type FeedbackEventType = 'INSERT_feedback' | 'UPDATE_feedback' | 'DELETE_feedback'
 
 export interface TaskEventHandlers {
-  onTaskCreated?: (payload: { task?: unknown }) => void
-  onTaskUpdated?: (payload: { task?: unknown }) => void
-  onTaskDeleted?: (payload: { taskId?: string }) => void
+  onTaskCreated?: (payload: Record<string, unknown>) => void
+  onTaskUpdated?: (payload: Record<string, unknown>) => void
+  onTaskDeleted?: (payload: { id?: string }) => void
 }
 
 export interface FeedbackEventHandlers {

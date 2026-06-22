@@ -34,8 +34,8 @@ export function useTasks(categoryId?: string) {
 
     return realtimeService.subscribeToTaskChannel(userId, categoryId, {
       onTaskCreated: (payload) => {
-        const task = payload.task as Task | undefined
-        if (!task || task.category_id !== categoryId) return
+        const task = payload as Task
+        if (String(task.category_id) !== categoryId) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) => {
           if (current.some((t) => t.id === task.id)) return current
@@ -43,18 +43,19 @@ export function useTasks(categoryId?: string) {
         })
       },
       onTaskUpdated: (payload) => {
-        const task = payload.task as Task | undefined
-        if (!task || task.category_id !== categoryId) return
+        const task = payload as Task
+        if (String(task.category_id) !== categoryId) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
           current.map((t) => (t.id === task.id ? task : t)),
         )
       },
       onTaskDeleted: (payload) => {
-        if (!payload.taskId) return
+        const { id } = payload as { id: string }
+        if (!id) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-          current.filter((t) => t.id !== payload.taskId),
+          current.filter((t) => t.id !== id),
         )
       },
     })

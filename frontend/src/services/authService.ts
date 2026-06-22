@@ -54,7 +54,10 @@ export async function signInWithGoogle(): Promise<void> {
 }
 
 export async function setProfile(profile: ProfileData): Promise<ProfileData> {
-  return api<ProfileData>('PATCH', '/user-profiles/me', profile)
+  return api<ProfileData>('PATCH', '/user-profiles/me', {
+    displayName: profile.name ?? undefined,
+    avatarUrl: profile.avatar_url ?? undefined,
+  })
 }
 
 export async function uploadAvatar(file: File): Promise<{ url: string }> {

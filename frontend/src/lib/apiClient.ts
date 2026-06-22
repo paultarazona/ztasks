@@ -24,9 +24,9 @@ export async function api<T = unknown>(
     credentials: 'include',
   }
 
-  if (body !== undefined) {
-    init.body = JSON.stringify(body)
+  if (['POST', 'PUT', 'PATCH'].includes(method) || body !== undefined) {
     init.headers = { 'Content-Type': 'application/json' }
+    init.body = JSON.stringify(body ?? {})
   }
 
   const response = await fetch(url, init)

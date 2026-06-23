@@ -29,7 +29,7 @@ export function getTasksByCategory(categoryId: string): Promise<Task[]> {
 }
 
 export function createTask(input: CreateTaskInput): Promise<Task> {
-  const { category_id, status_id, due_date, priority: _priority, ...rest } = input
+  const { category_id, status_id, due_date, ...rest } = input
   return api<Task>('POST', '/tasks', {
     ...rest,
     categoryId: category_id,
@@ -39,11 +39,10 @@ export function createTask(input: CreateTaskInput): Promise<Task> {
 }
 
 export function updateTask({ id, status_id, due_date, ...rest }: UpdateTaskInput): Promise<Task> {
-  return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, {
-    ...rest,
-    statusId: status_id,
-    dueDate: due_date ?? null,
-  })
+  const body: Record<string, unknown> = { ...rest }
+  if (status_id !== undefined) body.statusId = status_id
+  if (due_date !== undefined) body.dueDate = due_date
+  return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, body)
 }
 
 export async function deleteTask(id: string): Promise<void> {

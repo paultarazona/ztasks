@@ -5,7 +5,7 @@ import { requireAuth } from '../shared/middleware/requireAuth'
 import { requireAdmin } from '../shared/middleware/requireAdmin'
 import { db } from '../shared/db'
 import { feedback } from '../db/schema'
-import { badRequest, notFound } from '../shared/errors'
+import { badRequest, notFound, validationError } from '../shared/errors'
 import { sseManager } from '../shared/sse'
 
 export const feedbackRouter = new Hono<AppEnv>()
@@ -16,7 +16,7 @@ feedbackRouter.post('/', requireAuth, async (c) => {
   const body = await c.req.json<{ message: string }>()
 
   if (!body.message) {
-    return c.json(badRequest('message is required'), 400)
+    return c.json(validationError({ message: 'required' }), 422)
   }
 
   const [inserted] = await db

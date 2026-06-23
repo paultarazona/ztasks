@@ -4,7 +4,7 @@ import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { taskNotes, tasks } from '../db/schema'
-import { badRequest, notFound, forbidden } from '../shared/errors'
+import { badRequest, notFound, forbidden, validationError } from '../shared/errors'
 
 export const taskNotesRouter = new Hono<AppEnv>()
 
@@ -43,7 +43,7 @@ taskNotesRouter.post('/', async (c) => {
   const body = await c.req.json<{ taskId: number; content: string }>()
 
   if (!body.taskId || !body.content) {
-    return c.json(badRequest('taskId and content are required'), 400)
+    return c.json(validationError({ taskId: 'required', content: 'required' }), 422)
   }
 
   // Verify task ownership

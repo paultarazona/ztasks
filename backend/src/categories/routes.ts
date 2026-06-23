@@ -4,7 +4,7 @@ import type { AppEnv } from '../shared/auth'
 import { requireAuth } from '../shared/middleware/requireAuth'
 import { db } from '../shared/db'
 import { categories } from '../db/schema'
-import { badRequest, notFound } from '../shared/errors'
+import { badRequest, notFound, validationError } from '../shared/errors'
 
 export const categoriesRouter = new Hono<AppEnv>()
 
@@ -28,7 +28,7 @@ categoriesRouter.post('/', async (c) => {
   }>()
 
   if (!body.name) {
-    return c.json(badRequest('name is required'), 400)
+    return c.json(validationError({ name: 'required' }), 422)
   }
 
   const [inserted] = await db

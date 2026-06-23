@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
-import { requireAdmin } from '../shared/middleware/requireAdmin'
+import { requireAuth } from '../shared/middleware/require-auth'
+import { requireAdmin } from '../shared/middleware/require-admin'
 import { sseManager } from '../shared/sse'
 import type { SSEStream } from '../shared/sse'
 

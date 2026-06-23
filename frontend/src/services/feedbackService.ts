@@ -6,12 +6,11 @@ import { api, ApiError } from '../lib/apiClient'
 
 export interface Feedback {
   id: string
-  user_id: string
+  userId: string
   type: 'feedback' | 'suggestion' | 'bug'
   message: string
-  read_at: string | null
-  read_by: string | null
-  created_at: string
+  isRead: boolean | null
+  createdAt: string
 }
 
 export interface FeedbackStats {
@@ -22,12 +21,12 @@ export interface FeedbackStats {
 }
 
 export async function submitFeedback(input: {
-  user_id: string
+  userId: string
   type: 'feedback' | 'suggestion' | 'bug'
   message: string
 }): Promise<void> {
-  const { user_id, ...body } = input
-  void user_id
+  const { userId, ...body } = input
+  void userId
   await api<void>('POST', '/feedback', body)
 }
 
@@ -37,8 +36,7 @@ export async function getFeedbacks(): Promise<Feedback[]> {
 
 export async function markRead(id: string, read: boolean, _userId: string): Promise<void> {
   await api<void>('PATCH', `/feedback/${encodeURIComponent(id)}`, {
-    read_at: read ? new Date().toISOString() : null,
-    read_by: read ? null : null,
+    isRead: read,
   })
 }
 

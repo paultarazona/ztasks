@@ -12,7 +12,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onClick, onEdit, onDelete, isDone }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
-  const dueInfo = task.due_date ? getDueDateInfo(task.due_date) : null
+  const dueInfo = task.dueDate ? getDueDateInfo(task.dueDate) : null
 
   return (
     <div className="group relative">
@@ -39,10 +39,10 @@ export function TaskCard({ task, onClick, onEdit, onDelete, isDone }: TaskCardPr
               <span>{priority.label}</span>
             </div>
             
-            {(task.notes_count ?? 0) > 0 && (
+            {(task.notesCount ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-surface-450 dark:text-surface-500 font-medium border-l border-surface-200 dark:border-surface-800 pl-2.5">
                 <MessageSquare size={13} />
-                <span>{task.notes_count}</span>
+                <span>{task.notesCount}</span>
               </div>
             )}
           </div>

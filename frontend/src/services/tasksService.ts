@@ -3,11 +3,11 @@ import type { Task, Priority } from '../types'
 
 export interface CreateTaskInput {
   title: string
-  category_id: string
-  status_id: string
+  categoryId: string
+  statusId: string
   description?: string
   priority?: Priority
-  due_date?: string | null
+  dueDate?: string | null
 }
 
 export interface UpdateTaskInput {
@@ -15,8 +15,8 @@ export interface UpdateTaskInput {
   title?: string
   description?: string | null
   priority?: Priority
-  status_id?: string
-  due_date?: string | null
+  statusId?: string
+  dueDate?: string | null
 }
 
 export interface ReorderTasksInput {
@@ -29,19 +29,19 @@ export function getTasksByCategory(categoryId: string): Promise<Task[]> {
 }
 
 export function createTask(input: CreateTaskInput): Promise<Task> {
-  const { category_id, status_id, due_date, ...rest } = input
+  const { categoryId, statusId, dueDate, ...rest } = input
   return api<Task>('POST', '/tasks', {
     ...rest,
-    categoryId: category_id,
-    statusId: status_id,
-    dueDate: due_date ?? null,
+    categoryId,
+    statusId,
+    dueDate: dueDate ?? null,
   })
 }
 
-export function updateTask({ id, status_id, due_date, ...rest }: UpdateTaskInput): Promise<Task> {
+export function updateTask({ id, statusId, dueDate, ...rest }: UpdateTaskInput): Promise<Task> {
   const body: Record<string, unknown> = { ...rest }
-  if (status_id !== undefined) body.statusId = status_id
-  if (due_date !== undefined) body.dueDate = due_date
+  if (statusId !== undefined) body.statusId = statusId
+  if (dueDate !== undefined) body.dueDate = dueDate
   return api<Task>('PATCH', `/tasks/${encodeURIComponent(id)}`, body)
 }
 

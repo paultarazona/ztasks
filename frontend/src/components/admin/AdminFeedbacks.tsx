@@ -13,17 +13,17 @@ export function AdminFeedbacks() {
   useRealtimeFeedback()
 
   const filteredFeedbacks = feedbacks?.filter((fb) => {
-    if (filter === 'unread') return !fb.read_at
-    if (filter === 'read') return !!fb.read_at
+    if (filter === 'unread') return !fb.isRead
+    if (filter === 'read') return !!fb.isRead
     return true
   }) ?? []
 
   const handleMarkAsRead = (fb: Feedback) => {
-    markAsRead.mutate({ id: fb.id, read: !fb.read_at })
+    markAsRead.mutate({ id: fb.id, read: !fb.isRead })
   }
 
   const handleDelete = (id: string) => {
-    if (window.confirm('¿Eliminar este feedback?')) {
+    if (window.confirm('Delete this feedback?')) {
       deleteFeedback.mutate(id)
       if (selectedFeedback?.id === id) setSelectedFeedback(null)
     }
@@ -76,17 +76,17 @@ export function AdminFeedbacks() {
                 onClick={() => setSelectedFeedback(fb)}
                 className={`w-full text-left px-4 py-3 border-b border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors ${
                   selectedFeedback?.id === fb.id ? 'bg-brand-50 dark:bg-brand-500/10' : ''
-                } ${!fb.read_at ? 'bg-amber-50/50 dark:bg-amber-500/5' : ''}`}
+                } ${!fb.isRead ? 'bg-amber-50/50 dark:bg-amber-500/5' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${typeColors[fb.type]}`}>
                     {typeLabels[fb.type]}
                   </span>
-                  {!fb.read_at && <Clock size={12} className="text-amber-500" />}
+                  {!fb.isRead && <Clock size={12} className="text-amber-500" />}
                 </div>
                 <p className="mt-1 text-sm text-surface-700 dark:text-surface-200 line-clamp-2">{fb.message}</p>
                 <p className="mt-1 text-xs text-surface-400">
-                  {new Date(fb.created_at).toLocaleString('es-AR')}
+                  {new Date(fb.createdAt).toLocaleString('es-AR')}
                 </p>
               </button>
             ))
@@ -104,7 +104,7 @@ export function AdminFeedbacks() {
                   {typeLabels[selectedFeedback.type]}
                 </span>
                 <span className="text-xs text-surface-400">
-                  {new Date(selectedFeedback.created_at).toLocaleString('es-AR')}
+                  {new Date(selectedFeedback.createdAt).toLocaleString('es-AR')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -113,8 +113,8 @@ export function AdminFeedbacks() {
                   size="sm"
                   onClick={() => handleMarkAsRead(selectedFeedback)}
                 >
-                  {selectedFeedback.read_at ? <EyeOff size={16} /> : <Eye size={16} />}
-                  {selectedFeedback.read_at ? 'Marcar sin leer' : 'Marcar leído'}
+                  {selectedFeedback.isRead ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {selectedFeedback.isRead ? 'Marcar sin leer' : 'Marcar leído'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -130,9 +130,9 @@ export function AdminFeedbacks() {
               <p className="text-sm text-surface-700 dark:text-surface-200 whitespace-pre-wrap">
                 {selectedFeedback.message}
               </p>
-              {selectedFeedback.read_at && (
+              {selectedFeedback.isRead && (
                 <p className="mt-4 text-xs text-surface-400">
-                  Leído el {new Date(selectedFeedback.read_at).toLocaleString('es-AR')}
+                  Leído
                 </p>
               )}
             </div>

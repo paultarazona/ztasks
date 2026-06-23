@@ -11,18 +11,18 @@ import type { Category } from '../types'
 
 export interface CreateCategoryInput {
   name: string
-  user_id: string
+  userId: string
   color?: string
-  parent_id?: string | null
+  parentId?: string | null
   type?: 'folder' | 'list'
 }
 
 export interface UpdateCategoryInput {
   id: string
-  user_id: string
+  userId: string
   name?: string
   color?: string | null
-  parent_id?: string | null
+  parentId?: string | null
 }
 
 export interface DeleteCategoryInput {
@@ -41,13 +41,13 @@ export async function getTrashCategories(_userId: string): Promise<Category[]> {
 }
 
 export async function createCategory(input: CreateCategoryInput): Promise<Category> {
-  const { user_id, ...body } = input
-  void user_id
+  const { userId, ...body } = input
+  void userId
   return api<Category>('POST', '/categories', body)
 }
 
-export async function updateCategory({ id, user_id, ...body }: UpdateCategoryInput): Promise<Category> {
-  void user_id
+export async function updateCategory({ id, userId, ...body }: UpdateCategoryInput): Promise<Category> {
+  void userId
   return api<Category>('PATCH', `/categories/${encodeURIComponent(id)}`, body)
 }
 

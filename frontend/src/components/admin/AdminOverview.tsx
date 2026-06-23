@@ -99,7 +99,7 @@ export function AdminOverview() {
             recentFeedbacks.map((fb) => (
               <div key={fb.id} className="flex items-start gap-3 px-4 py-3">
                 <div className="mt-0.5">
-                  {!fb.read_at ? (
+                  {!fb.isRead ? (
                     <Clock size={16} className="text-amber-500" />
                   ) : (
                     <CheckCircle size={16} className="text-green-500" />
@@ -109,7 +109,7 @@ export function AdminOverview() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium uppercase text-surface-500">{fb.type}</span>
                     <span className="text-xs text-surface-400">
-                      {new Date(fb.created_at).toLocaleString('es-AR')}
+                      {new Date(fb.createdAt).toLocaleString('es-AR')}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-surface-700 dark:text-surface-300 line-clamp-2">

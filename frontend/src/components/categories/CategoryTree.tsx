@@ -208,12 +208,12 @@ export function CategoryTree({ selectedId, onSelect }: CategoryTreeProps) {
   const [categoryToEditId, setCategoryToEditId] = useState<string | null>(null)
   const [trashOpen, setTrashOpen] = useState(false)
 
-  const rootCategories = categories?.filter((c) => !c.parent_id) ?? []
+  const rootCategories = categories?.filter((c) => !c.parentId) ?? []
   const trashRootCount = (deletedCategories ?? []).filter(
-    (category) => category.deleted_root_id === category.id || !category.deleted_root_id,
+    (category) => category.deletedRootId === category.id || !category.deletedRootId,
   ).length
   const getChildren = (parentId: string) =>
-    categories?.filter((c) => c.parent_id === parentId) ?? []
+    categories?.filter((c) => c.parentId === parentId) ?? []
   const categoryToDelete = categories?.find((item) => item.id === categoryToDeleteId)
 
   useEffect(() => {
@@ -257,7 +257,7 @@ export function CategoryTree({ selectedId, onSelect }: CategoryTreeProps) {
     type: 'folder' | 'list',
   ) => {
     createCategory.mutate(
-      { name, color, parent_id: parentId, type },
+      { name, color, parentId: parentId, type },
       {
         onSuccess: () => {
           setDialogOpen(false)
@@ -432,7 +432,7 @@ export function CategoryTree({ selectedId, onSelect }: CategoryTreeProps) {
           onClose={() => setTaskCategoryId(null)}
           onSubmit={(data) => {
             createTask.mutate(
-              { ...data, category_id: taskCategoryId },
+              { ...data, categoryId: taskCategoryId },
               { onSuccess: () => setTaskCategoryId(null) },
             )
           }}

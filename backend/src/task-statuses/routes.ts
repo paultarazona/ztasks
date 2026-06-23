@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { eq, or, isNull } from 'drizzle-orm'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
+import { requireAuth } from '../shared/middleware/require-auth'
 import { db } from '../shared/db'
 import { taskStatuses } from '../db/schema'
 import { badRequest } from '../shared/errors'

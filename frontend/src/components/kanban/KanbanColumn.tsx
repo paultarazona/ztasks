@@ -69,11 +69,9 @@ export function KanbanColumn({
     data: { type: 'column', status },
   })
 
-  const isDoneColumn = status.name.toLowerCase() === 'completado' ||
-                       status.name.toLowerCase() === 'completada' ||
-                       status.name.toLowerCase() === 'done' ||
-                       status.name.toLowerCase() === 'terminado' ||
-                       status.name.toLowerCase() === 'finalizado'
+  const isDoneColumn = status.name.toLowerCase() === 'done' ||
+                       status.name.toLowerCase() === 'complete' ||
+                       status.name.toLowerCase() === 'completed'
 
   return (
     <div

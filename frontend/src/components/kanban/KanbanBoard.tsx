@@ -52,8 +52,8 @@ export function KanbanBoard({ categoryId }: KanbanBoardProps) {
     const task = tasks?.find((t) => t.id === taskId)
     if (!task) return
 
-    if (task.status_id !== overId && statuses?.some((s) => s.id === overId)) {
-      updateTask.mutate({ id: taskId, status_id: overId })
+    if (task.statusId !== overId && statuses?.some((s) => s.id === overId)) {
+      updateTask.mutate({ id: taskId, statusId: overId })
     }
   }
 
@@ -75,7 +75,7 @@ export function KanbanBoard({ categoryId }: KanbanBoardProps) {
   }
 
   const getTasksByStatus = (statusId: string) =>
-    tasks?.filter((t) => t.status_id === statusId) ?? []
+    tasks?.filter((t) => t.statusId === statusId) ?? []
 
   return (
     <>

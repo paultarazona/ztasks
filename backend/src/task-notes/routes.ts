@@ -64,6 +64,34 @@ taskNotesRouter.post('/', async (c) => {
   return c.json(inserted, 201)
 })
 
+// PATCH /task-notes/:id — update note content (ownership check via task)
+taskNotesRouter.patch('/:id', async (c) => {
+  const user = c.get('user')
+  const id = parseInt(c.req.param('id'), 10)
+  if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
+
+  const body = await c.req.json<{ content: string }>()
+  if (!body.content) return c.json(validationError({ content: 'required' }), 422)
+
+  const [note] = await db.select().from(taskNotes).where(eq(taskNotes.id, id))
+  if (!note) return c.json(notFound(), 404)
+
+  const [task] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, note.taskId), eq(tasks.userId, user.id)))
+
+  if (!task) return c.json(forbidden(), 403)
+
+  const [updated] = await db
+    .update(taskNotes)
+    .set({ content: body.content, updatedAt: new Date() })
+    .where(eq(taskNotes.id, id))
+    .returning()
+
+  return c.json(updated)
+})
+
 // DELETE /task-notes/:id — delete a note (ownership check via task)
 taskNotesRouter.delete('/:id', async (c) => {
   const user = c.get('user')

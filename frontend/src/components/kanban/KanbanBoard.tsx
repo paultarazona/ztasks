@@ -46,14 +46,20 @@ export function KanbanBoard({ categoryId }: KanbanBoardProps) {
     const { active, over } = event
     if (!over) return
 
-    const taskId = active.id as string
-    const overId = over.id as string
+    const taskId = active.id
+    const overId = over.id
 
     const task = tasks?.find((t) => t.id === taskId)
     if (!task) return
 
-    if (task.statusId !== overId && statuses?.some((s) => s.id === overId)) {
-      updateTask.mutate({ id: taskId, statusId: overId })
+    // overId can be a status (column) ID or a task ID — resolve to a status ID
+    const isColumn = statuses?.some((s) => s.id === overId)
+    const targetStatusId = isColumn
+      ? overId
+      : tasks?.find((t) => t.id === overId)?.statusId
+
+    if (targetStatusId != null && task.statusId !== targetStatusId) {
+      updateTask.mutate({ id: String(taskId), statusId: String(targetStatusId) })
     }
   }
 

@@ -3,6 +3,7 @@ import { pgTable, serial, text, integer, timestamp, boolean } from 'drizzle-orm/
 export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   userId: text('user_id').notNull(),
+  parentId: integer('parent_id'),
   name: text('name').notNull(),
   color: text('color'),
   type: text('type').$type<'folder' | 'list'>().default('list').notNull(),

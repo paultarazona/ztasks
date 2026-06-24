@@ -8,7 +8,7 @@ interface TaskDetailModalProps {
   open: boolean
   defaultEditing?: boolean
   onClose: () => void
-  onUpdate: (data: { id: string; title?: string; description?: string | null; priority?: Priority; due_date?: string | null }) => void
+  onUpdate: (data: { id: string; title?: string; description?: string | null; priority?: Priority; dueDate?: string | null }) => void
   isUpdating: boolean
 }
 
@@ -24,7 +24,7 @@ function TaskDetailModalContent({ task, defaultEditing = false, onClose, onUpdat
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [priority, setPriority] = useState<Priority>(task.priority)
-  const [dueDate, setDueDate] = useState(task.due_date?.split('T')[0] || '')
+  const [dueDate, setDueDate] = useState(task.dueDate?.split('T')[0] || '')
   const [newNote, setNewNote] = useState('')
 
   const { data: notes, createNote, deleteNote } = useTaskNotes(task.id)
@@ -35,7 +35,7 @@ function TaskDetailModalContent({ task, defaultEditing = false, onClose, onUpdat
       title,
       description: description || null,
       priority,
-      due_date: dueDate || null,
+      dueDate: dueDate || null,
     })
     if (wasOpenedEditing) {
       onClose()
@@ -51,7 +51,7 @@ function TaskDetailModalContent({ task, defaultEditing = false, onClose, onUpdat
       setTitle(task.title)
       setDescription(task.description || '')
       setPriority(task.priority)
-      setDueDate(task.due_date?.split('T')[0] || '')
+      setDueDate(task.dueDate?.split('T')[0] || '')
       setIsEditing(false)
     }
   }
@@ -60,7 +60,7 @@ function TaskDetailModalContent({ task, defaultEditing = false, onClose, onUpdat
     e.preventDefault()
     if (!newNote.trim()) return
     createNote.mutate(
-      { task_id: task.id, content: newNote.trim() },
+      { taskId: task.id, content: newNote.trim() },
       { onSuccess: () => setNewNote('') }
     )
   }
@@ -157,11 +157,11 @@ function TaskDetailModalContent({ task, defaultEditing = false, onClose, onUpdat
                   <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-1">Prioridad</h4>
                   <span className="text-sm text-surface-700 dark:text-surface-300">{priorityLabels[task.priority]}</span>
                 </div>
-                {task.due_date && (
+                {task.dueDate && (
                   <div>
                     <h4 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-1">Fecha limite</h4>
                     <span className="text-sm text-surface-700 dark:text-surface-300">
-                      {new Date(task.due_date).toLocaleDateString('es-AR', {
+                      {new Date(task.dueDate).toLocaleDateString('es-AR', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',

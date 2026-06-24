@@ -1,50 +1,50 @@
 export interface Category {
   id: string
-  user_id: string
+  userId: string
   name: string
   color: string | null
-  parent_id: string | null
+  parentId: string | null
   type: 'folder' | 'list'
-  deleted_at: string | null
-  deleted_root_id: string | null
-  deleted_as: 'tree' | 'folder' | 'list' | null
-  deleted_original_parent_id: string | null
-  created_at: string
+  deletedAt: string | null
+  deletedRootId: string | null
+  deletedAs: 'tree' | 'folder' | 'list' | null
+  deletedOriginalParentId: string | null
+  createdAt: string
 }
 
 export interface TaskStatus {
   id: string
-  user_id: string
-  category_id: string | null
+  userId: string
+  categoryId: string | null
   name: string
   position: number
   color: string
-  created_at: string
+  createdAt: string
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
 
 export interface Task {
   id: string
-  user_id: string
-  category_id: string
-  status_id: string
+  userId: string
+  categoryId: string
+  statusId: string
   title: string
   description: string | null
   priority: Priority
-  due_date: string | null
-  notes_count?: number
-  created_at: string
-  updated_at: string
+  dueDate: string | null
+  notesCount?: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface TaskNote {
   id: string
-  task_id: string
-  user_id: string
+  taskId: string
+  userId: string
   content: string
-  created_at: string
-  updated_at: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type CategoryTree = Category & {

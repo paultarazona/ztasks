@@ -20,9 +20,9 @@ export function useCategories() {
   })
 
   const createCategory = useMutation({
-    mutationFn: async (input: { name: string; color?: string; parent_id?: string | null; type?: 'folder' | 'list' }) => {
+    mutationFn: async (input: { name: string; color?: string; parentId?: string | null; type?: 'folder' | 'list' }) => {
       const currentUserId = getCurrentUserId()
-      return categoriesService.createCategory({ ...input, user_id: currentUserId })
+      return categoriesService.createCategory({ ...input, userId: currentUserId })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -30,9 +30,9 @@ export function useCategories() {
   })
 
   const updateCategory = useMutation({
-    mutationFn: async ({ id, ...input }: { id: string; name?: string; color?: string | null; parent_id?: string | null }) => {
+    mutationFn: async ({ id, ...input }: { id: string; name?: string; color?: string | null; parentId?: string | null }) => {
       const currentUserId = getCurrentUserId()
-      return categoriesService.updateCategory({ id, user_id: currentUserId, ...input })
+      return categoriesService.updateCategory({ id, userId: currentUserId, ...input })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -116,8 +116,8 @@ export function buildCategoryTree(categories: Category[]): Category[] {
   }
 
   for (const cat of map.values()) {
-    if (cat.parent_id && map.has(cat.parent_id)) {
-      map.get(cat.parent_id)!.children.push(cat)
+    if (cat.parentId && map.has(cat.parentId)) {
+      map.get(cat.parentId)!.children.push(cat)
     } else {
       roots.push(cat)
     }

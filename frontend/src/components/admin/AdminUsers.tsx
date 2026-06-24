@@ -4,12 +4,12 @@ import { Users, Shield, RefreshCw } from 'lucide-react'
 import { Button } from '../ui/Button'
 
 interface UserProfile {
-  user_id: string
+  userId: string
   email: string | null
-  last_login: string | null
-  is_active: boolean
+  lastLogin: string | null
+  isActive: boolean
   metadata: Record<string, unknown>
-  created_at: string
+  createdAt: string
 }
 
 export function AdminUsers() {
@@ -52,27 +52,27 @@ export function AdminUsers() {
               </tr>
             ) : (
               users?.map((user) => (
-                <tr key={user.user_id}>
+                <tr key={user.userId}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
                         <Users size={14} className="text-surface-500" />
                       </div>
-                      <span className="text-sm text-surface-700 dark:text-surface-200">{user.email ?? user.user_id}</span>
+                      <span className="text-sm text-surface-700 dark:text-surface-200">{user.email ?? user.userId}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-surface-500">
-                    {user.last_login
-                      ? new Date(user.last_login).toLocaleString('es-AR')
+                    {user.lastLogin
+                      ? new Date(user.lastLogin).toLocaleString('es-AR')
                       : 'Nunca'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      user.is_active
+                      user.isActive
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                     }`}>
-                      {user.is_active ? 'Activo' : 'Inactivo'}
+                      {user.isActive ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   <td className="px-4 py-3">

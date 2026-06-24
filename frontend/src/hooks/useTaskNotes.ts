@@ -19,9 +19,9 @@ export function useTaskNotes(taskId?: string) {
   })
 
   const createNote = useMutation({
-    mutationFn: async (input: { task_id: string; content: string }) => {
+    mutationFn: async (input: { taskId: string; content: string }) => {
       const currentUserId = getCurrentUserId()
-      return notesService.createNote({ ...input, user_id: currentUserId })
+      return notesService.createNote({ ...input, userId: currentUserId })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task_notes'] })

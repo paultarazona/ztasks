@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
+import { requireAuth } from '../shared/middleware/require-auth'
+import { requireAdmin } from '../shared/middleware/require-admin'
 import { sseManager } from '../shared/sse'
 import type { SSEStream } from '../shared/sse'
 
@@ -50,7 +51,7 @@ realtimeRouter.get('/tasks/:categoryId', requireAuth, (c) => {
  * Opens an SSE stream for admin feedback events.
  * Requires authentication (admin check is enforced in the broadcast source).
  */
-realtimeRouter.get('/feedback', requireAuth, (c) => {
+realtimeRouter.get('/feedback', requireAdmin, (c) => {
   const channel = 'feedback:admin'
 
   return streamSSE(c, async (stream) => {

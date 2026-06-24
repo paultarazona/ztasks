@@ -33,15 +33,15 @@ void ApiError // referenced to ensure import is used
 
 const task = {
   id: 'task-1',
-  user_id: 'user-1',
-  category_id: 'category-1',
-  status_id: 'status-1',
+  userId: 'user-1',
+  categoryId: 'category-1',
+  statusId: 'status-1',
   title: 'Task 1',
   description: null,
   priority: 'medium',
-  due_date: null,
-  created_at: '2026-06-20T00:00:00.000Z',
-  updated_at: '2026-06-20T00:00:00.000Z',
+  dueDate: null,
+  createdAt: '2026-06-20T00:00:00.000Z',
+  updatedAt: '2026-06-20T00:00:00.000Z',
 } satisfies Task
 
 describe('tasksService', () => {
@@ -68,21 +68,21 @@ describe('tasksService', () => {
 
     await expect(
       createTask({
-        category_id: 'category-1',
-        status_id: 'status-1',
+        categoryId: 'category-1',
+        statusId: 'status-1',
         title: 'Task 1',
         description: 'Details',
         priority: 'high',
-        due_date: null,
+        dueDate: null,
       }),
     ).resolves.toEqual(task)
     expect(apiMock).toHaveBeenCalledWith('POST', '/tasks', {
-      category_id: 'category-1',
-      status_id: 'status-1',
+      categoryId: 'category-1',
+      statusId: 'status-1',
       title: 'Task 1',
       description: 'Details',
       priority: 'high',
-      due_date: null,
+      dueDate: null,
     })
   })
 
@@ -95,6 +95,7 @@ describe('tasksService', () => {
       updateTask({ id: 'task-1', title: 'Updated' }),
     ).resolves.toEqual({ ...task, title: 'Updated' })
     expect(apiMock).toHaveBeenCalledWith('PATCH', '/tasks/task-1', { title: 'Updated' })
+    // statusId and dueDate are omitted when undefined
   })
 
   it('deletes a task through apiClient', async () => {
@@ -128,8 +129,8 @@ describe('tasksService', () => {
 
     await expect(
       createTask({
-        category_id: 'cat-1',
-        status_id: 'status-1',
+        categoryId: 'cat-1',
+        statusId: 'status-1',
         title: 'Fail task',
       }),
     ).rejects.toThrow('Unauthorized')

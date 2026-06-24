@@ -22,8 +22,8 @@ export interface CreateTaskFormData {
   title: string
   description: string
   priority: Priority
-  status_id: string
-  due_date: string | null
+  statusId: string
+  dueDate: string | null
 }
 
 interface CreateTaskDialogProps {
@@ -65,8 +65,8 @@ export function CreateTaskDialog({
       title: title.trim(),
       description: description.trim(),
       priority,
-      status_id: selectedStatusId,
-      due_date: dueDate || null,
+      statusId: selectedStatusId,
+      dueDate: dueDate || null,
     })
     setTitle('')
     setDescription('')

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   DndContext,
   DragOverlay,
-  pointerWithin,
+  closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
@@ -46,14 +46,20 @@ export function KanbanBoard({ categoryId }: KanbanBoardProps) {
     const { active, over } = event
     if (!over) return
 
-    const taskId = active.id as string
-    const overId = over.id as string
+    const taskId = active.id
+    const overId = over.id
 
     const task = tasks?.find((t) => t.id === taskId)
     if (!task) return
 
-    if (task.status_id !== overId && statuses?.some((s) => s.id === overId)) {
-      updateTask.mutate({ id: taskId, status_id: overId })
+    // overId can be a status (column) ID or a task ID — resolve to a status ID
+    const isColumn = statuses?.some((s) => s.id === overId)
+    const targetStatusId = isColumn
+      ? overId
+      : tasks?.find((t) => t.id === overId)?.statusId
+
+    if (targetStatusId != null && task.statusId !== targetStatusId) {
+      updateTask.mutate({ id: String(taskId), statusId: String(targetStatusId) })
     }
   }
 
@@ -75,13 +81,13 @@ export function KanbanBoard({ categoryId }: KanbanBoardProps) {
   }
 
   const getTasksByStatus = (statusId: string) =>
-    tasks?.filter((t) => t.status_id === statusId) ?? []
+    tasks?.filter((t) => t.statusId === statusId) ?? []
 
   return (
     <>
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

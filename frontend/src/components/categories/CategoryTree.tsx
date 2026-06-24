@@ -81,7 +81,7 @@ function CategoryNode({
       )}
       <div
         className={`group grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-1 rounded-xl text-sm transition-colors mx-1 sm:mx-2 min-w-0 ${
-          selectedId === category.id
+          selectedId === String(category.id)
             ? 'bg-brand-100 dark:bg-brand-500/20'
             : 'hover:bg-surface-100 dark:hover:bg-surface-800'
         }`}
@@ -114,7 +114,7 @@ function CategoryNode({
           )}
           <span
             className={`truncate ${
-              selectedId === category.id
+              selectedId === String(category.id)
                 ? 'font-semibold text-brand-800 dark:text-brand-300'
                 : 'text-surface-700 dark:text-surface-300 font-medium'
             }`}

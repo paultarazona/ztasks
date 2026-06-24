@@ -11,7 +11,7 @@ type ViewMode = 'kanban' | 'list'
 export function CategoryView() {
   const { categoryId } = useParams<{ categoryId: string }>()
   const { data: categories, isLoading } = useCategories()
-  const category = categories?.find((c) => c.id === categoryId)
+  const category = categories?.find((c) => String(c.id) === categoryId)
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
 
   if (!categoryId) {

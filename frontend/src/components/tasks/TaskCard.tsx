@@ -11,7 +11,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onClick, onEdit, onDelete, isDone }: TaskCardProps) {
-  const priority = priorityConfig[task.priority]
+  const priority = priorityConfig[task.priority ?? 'medium']
   const dueInfo = task.dueDate ? getDueDateInfo(task.dueDate) : null
 
   return (

@@ -12,7 +12,7 @@ export interface SignUpResult {
 
 export interface ProfileData {
   name?: string | null
-  avatar_url?: string | null
+  avatarUrl?: string | null
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -54,7 +54,10 @@ export async function signInWithGoogle(): Promise<void> {
 }
 
 export async function setProfile(profile: ProfileData): Promise<ProfileData> {
-  return api<ProfileData>('PATCH', '/user-profiles/me', profile)
+  return api<ProfileData>('PATCH', '/user-profiles/me', {
+    displayName: profile.name ?? undefined,
+    avatarUrl: profile.avatarUrl ?? undefined,
+  })
 }
 
 export async function uploadAvatar(file: File): Promise<{ url: string }> {

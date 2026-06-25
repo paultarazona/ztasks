@@ -10,7 +10,7 @@ interface TrashDialogProps {
   onClose: () => void
 }
 
-const deletedAsLabel: Record<NonNullable<Category['deleted_as']>, string> = {
+const deletedAsLabel: Record<NonNullable<Category['deletedAs']>, string> = {
   tree: 'Árbol completo',
   folder: 'Carpeta',
   list: 'Lista',
@@ -31,7 +31,7 @@ export function TrashDialog({ open, onClose }: TrashDialogProps) {
   const { data: deletedCategories, isLoading, restoreCategory, permanentDelete } = useTrashCategories()
   const deleted = deletedCategories ?? []
   const roots = deleted.filter(
-    (category) => category.deleted_root_id === category.id || !category.deleted_root_id,
+    (category) => category.deletedRootId === category.id || !category.deletedRootId,
   )
   const [itemToDelete, setItemToDelete] = useState<{ ids: string[]; name: string } | null>(null)
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false)
@@ -39,9 +39,9 @@ export function TrashDialog({ open, onClose }: TrashDialogProps) {
   if (!open) return null
 
   const getTrashGroupIds = (root: Category) => {
-    const rootId = root.deleted_root_id ?? root.id
+    const rootId = root.deletedRootId ?? root.id
     return deleted
-      .filter((category) => category.deleted_root_id === rootId || category.id === root.id)
+      .filter((category) => category.deletedRootId === rootId || category.id === root.id)
       .map((category) => category.id)
   }
 
@@ -119,7 +119,7 @@ export function TrashDialog({ open, onClose }: TrashDialogProps) {
                 {roots.map((root) => {
                   const ids = getTrashGroupIds(root)
                   const isList = root.type === 'list'
-                  const deletedAs = root.deleted_as ?? root.type
+                  const deletedAs = root.deletedAs ?? root.type
 
                   return (
                     <article
@@ -143,7 +143,7 @@ export function TrashDialog({ open, onClose }: TrashDialogProps) {
                               {deletedAsLabel[deletedAs]}
                             </span>
                             <span>{ids.length} elemento{ids.length !== 1 ? 's' : ''}</span>
-                            <span>{formatDeletedAt(root.deleted_at)}</span>
+                            <span>{formatDeletedAt(root.deletedAt)}</span>
                           </div>
                         </div>
                         <div className="flex shrink-0 gap-2">

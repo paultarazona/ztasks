@@ -8,11 +8,11 @@ import type { CreateTaskFormData } from '../components/tasks/CreateTaskDialog'
 
 interface CreateTaskInput {
   title: string
-  category_id: string
-  status_id: string
+  categoryId: string
+  statusId: string
   description?: string
   priority?: Priority
-  due_date?: string | null
+  dueDate?: string | null
 }
 
 interface UpdateTaskInput {
@@ -20,8 +20,8 @@ interface UpdateTaskInput {
   title?: string
   description?: string | null
   priority?: Priority
-  status_id?: string
-  due_date?: string | null
+  statusId?: string
+  dueDate?: string | null
 }
 
 export function useTasks(categoryId?: string) {
@@ -34,8 +34,8 @@ export function useTasks(categoryId?: string) {
 
     return realtimeService.subscribeToTaskChannel(userId, categoryId, {
       onTaskCreated: (payload) => {
-        const task = payload.task as Task | undefined
-        if (!task || task.category_id !== categoryId) return
+        const task = payload as Task
+        if (String(task.categoryId) !== categoryId) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) => {
           if (current.some((t) => t.id === task.id)) return current
@@ -43,18 +43,19 @@ export function useTasks(categoryId?: string) {
         })
       },
       onTaskUpdated: (payload) => {
-        const task = payload.task as Task | undefined
-        if (!task || task.category_id !== categoryId) return
+        const task = payload as Task
+        if (String(task.categoryId) !== categoryId) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
           current.map((t) => (t.id === task.id ? task : t)),
         )
       },
       onTaskDeleted: (payload) => {
-        if (!payload.taskId) return
+        const { id } = payload as { id: string }
+        if (!id) return
         queryClient.invalidateQueries({ queryKey: ['pending-task-counts'] })
         queryClient.setQueryData<Task[]>(queryKey, (current = []) =>
-          current.filter((t) => t.id !== payload.taskId),
+          current.filter((t) => t.id !== id),
         )
       },
     })
@@ -145,9 +146,9 @@ export function toCreateTaskInput(categoryId: string, data: CreateTaskFormData):
     title: data.title,
     description: data.description,
     priority: data.priority,
-    status_id: data.status_id,
-    due_date: data.due_date,
-    category_id: categoryId,
+    statusId: data.statusId,
+    dueDate: data.dueDate,
+    categoryId: categoryId,
   }
 }
 

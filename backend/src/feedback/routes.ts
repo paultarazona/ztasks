@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
-import { requireAdmin } from '../shared/middleware/requireAdmin'
+import { requireAuth } from '../shared/middleware/require-auth'
+import { requireAdmin } from '../shared/middleware/require-admin'
 import { db } from '../shared/db'
 import { feedback } from '../db/schema'
-import { badRequest, notFound } from '../shared/errors'
+import { badRequest, notFound, validationError } from '../shared/errors'
 import { sseManager } from '../shared/sse'
 
 export const feedbackRouter = new Hono<AppEnv>()
@@ -16,7 +16,7 @@ feedbackRouter.post('/', requireAuth, async (c) => {
   const body = await c.req.json<{ message: string }>()
 
   if (!body.message) {
-    return c.json(badRequest('message is required'), 400)
+    return c.json(validationError({ message: 'required' }), 422)
   }
 
   const [inserted] = await db
@@ -27,6 +27,19 @@ feedbackRouter.post('/', requireAuth, async (c) => {
   sseManager.broadcast('feedback:admin', { type: 'feedback_created', payload: inserted })
 
   return c.json(inserted, 201)
+})
+
+// GET /feedback/stats — admin only, returns total/read/unread counts
+feedbackRouter.get('/stats', requireAdmin, async (c) => {
+  const rows = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      unread: sql<number>`count(*) filter (where is_read = false)::int`,
+      read: sql<number>`count(*) filter (where is_read = true)::int`,
+    })
+    .from(feedback)
+
+  return c.json(rows[0])
 })
 
 // GET /feedback — admin only

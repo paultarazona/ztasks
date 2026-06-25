@@ -10,13 +10,14 @@ export async function getNotesByTask(_userId: string, taskId: string): Promise<T
 }
 
 export async function createNote(input: {
-  task_id: string
+  taskId: string
   content: string
-  user_id: string
+  userId: string
 }): Promise<TaskNote> {
-  const { user_id, ...body } = input
-  void user_id
-  return api<TaskNote>('POST', '/task-notes', body)
+  return api<TaskNote>('POST', '/task-notes', {
+    taskId: input.taskId,
+    content: input.content,
+  })
 }
 
 export async function updateNote(id: string, _userId: string, content: string): Promise<TaskNote> {

@@ -49,14 +49,14 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile')
   const profile = user?.profile ?? {}
   const [name, setName] = useState(typeof profile.name === 'string' ? profile.name : '')
-  const [avatarUrl, setAvatarUrl] = useState(typeof profile.avatar_url === 'string' ? profile.avatar_url : '')
+  const [avatarUrl, setAvatarUrl] = useState(typeof profile.avatarUrl === 'string' ? profile.avatarUrl : '')
   const [savingProfile, setSavingProfile] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const fallbackAvatar = `https://api.dicebear.com/8.x/identicon/svg?seed=${user?.email ?? 'taskforge'}`
-  const profileAvatar = typeof profile.avatar_url === 'string' ? profile.avatar_url : ''
+  const profileAvatar = typeof profile.avatarUrl === 'string' ? profile.avatarUrl : ''
   const previewAvatar = avatarUrl.trim() || profileAvatar || fallbackAvatar
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -76,7 +76,7 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     try {
       const data = await authService.setProfile({
         name: name.trim() || null,
-        avatar_url: avatarUrl.trim() || null,
+        avatarUrl: avatarUrl.trim() || null,
       })
       updateProfile({ ...data })
       setMessage('Perfil actualizado.')
@@ -109,8 +109,8 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
       setAvatarUrl(newUrl)
 
       // Auto-save immediately so sidebar updates without reload
-      await authService.setProfile({ avatar_url: newUrl })
-      updateProfile({ avatar_url: newUrl })
+      await authService.setProfile({ avatarUrl: newUrl })
+      updateProfile({ avatarUrl: newUrl })
       setMessage('Imagen subida y guardada correctamente.')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.')
@@ -124,8 +124,8 @@ function SettingsDialogContent({ onClose }: Pick<SettingsDialogProps, 'onClose'>
     setAvatarUrl('')
 
     try {
-      await authService.setProfile({ avatar_url: null })
-      updateProfile({ avatar_url: null })
+      await authService.setProfile({ avatarUrl: null })
+      updateProfile({ avatarUrl: null })
       setMessage('Foto de perfil eliminada. Se mostrará un avatar por defecto.')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo quitar la foto del perfil.')

@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
 import { eq, and } from 'drizzle-orm'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
+import { requireAuth } from '../shared/middleware/require-auth'
 import { db } from '../shared/db'
 import { tasks } from '../db/schema'
 import { sseManager } from '../shared/sse'
-import { badRequest, notFound } from '../shared/errors'
+import { badRequest, notFound, validationError } from '../shared/errors'
 
 export const tasksRouter = new Hono<AppEnv>()
 
@@ -56,7 +56,7 @@ tasksRouter.post('/', async (c) => {
   }>()
 
   if (!body.title) {
-    return c.json(badRequest('title is required'), 400)
+    return c.json(validationError({ title: 'required' }), 422)
   }
 
   const [inserted] = await db
@@ -131,7 +131,7 @@ tasksRouter.delete('/:id', async (c) => {
 
   sseManager.broadcast(`tasks:${user.id}:${existing.categoryId}`, {
     type: 'task_deleted',
-    payload: { id },
+    payload: { id: String(existing.id) },
   })
 
   return c.json({ success: true })

@@ -55,15 +55,15 @@ export function getDueDateInfo(dueDate: string): { label: string; color: string;
   const diffMs = due.getTime() - now.getTime()
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
 
-  // Formatear la fecha a un formato amigable como "24 May"
+  // Format date to a friendly label like "24 May"
   const day = due.getDate()
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const monthLabel = months[due.getMonth()]
   const staticLabel = `${day} ${monthLabel}`
 
-  if (diffDays < 0) return { label: 'Vencido', color: 'text-red-600', darkColor: 'dark:text-red-400', isOverdue: true }
-  if (diffDays === 0) return { label: 'Hoy', color: 'text-red-600', darkColor: 'dark:text-red-400', isOverdue: true }
-  if (diffDays === 1) return { label: 'Mañana', color: 'text-orange-600', darkColor: 'dark:text-orange-400', isOverdue: false }
+  if (diffDays < 0) return { label: 'Overdue', color: 'text-red-600', darkColor: 'dark:text-red-400', isOverdue: true }
+  if (diffDays === 0) return { label: 'Today', color: 'text-red-600', darkColor: 'dark:text-red-400', isOverdue: true }
+  if (diffDays === 1) return { label: 'Tomorrow', color: 'text-orange-600', darkColor: 'dark:text-orange-400', isOverdue: false }
   if (diffDays <= 3) return { label: staticLabel, color: 'text-amber-600', darkColor: 'dark:text-amber-400', isOverdue: false }
   if (diffDays <= 7) return { label: staticLabel, color: 'text-blue-600', darkColor: 'dark:text-blue-400', isOverdue: false }
   return { label: staticLabel, color: 'text-surface-500', darkColor: 'dark:text-surface-400', isOverdue: false }

@@ -19,7 +19,7 @@ export function Sidebar({ selectedCategoryId, onSelectCategory, open, onClose }:
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const profileName = typeof user?.profile?.name === 'string' ? user.profile.name : ''
-  const profileAvatarUrl = typeof user?.profile?.avatar_url === 'string' ? user.profile.avatar_url : ''
+  const profileAvatarUrl = typeof user?.profile?.avatarUrl === 'string' ? user.profile.avatarUrl : ''
   const avatarUrl = profileAvatarUrl || `https://api.dicebear.com/8.x/identicon/svg?seed=${user?.email}`
   const displayName = profileName || user?.email
 

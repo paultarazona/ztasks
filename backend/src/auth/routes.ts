@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { auth } from '../shared/auth'
 import type { AppEnv } from '../shared/auth'
-import { requireAuth } from '../shared/middleware/requireAuth'
+import { requireAuth } from '../shared/middleware/require-auth'
 
 const NOT_IMPLEMENTED = { error: 'Not implemented', code: 'NOT_IMPLEMENTED' }
 

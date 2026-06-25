@@ -32,7 +32,6 @@ export function createApp() {
   app.route('/auth/avatar', avatarRouter)
   app.route('/auth/reset-password', resetRouter)
 
-  // Domain routes
   app.route('/tasks', tasksRouter)
   app.route('/categories', categoriesRouter)
   app.route('/task-statuses', taskStatusesRouter)

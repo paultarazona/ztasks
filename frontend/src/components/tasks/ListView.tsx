@@ -67,7 +67,7 @@ export function ListView({ categoryId }: ListViewProps) {
           <div className="divide-y divide-surface-100 dark:divide-surface-800">
             {filteredTasks?.map((task) => {
               const priority = priorityConfig[task.priority]
-              const dueInfo = task.due_date ? getDueDateInfo(task.due_date) : null
+              const dueInfo = task.dueDate ? getDueDateInfo(task.dueDate) : null
               return (
                 <div
                   key={task.id}

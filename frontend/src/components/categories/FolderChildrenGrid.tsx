@@ -9,7 +9,7 @@ interface FolderChildrenGridProps {
 export function FolderChildrenGrid({ categoryId }: FolderChildrenGridProps) {
   const navigate = useNavigate()
   const { data: categories } = useCategories()
-  const children = categories?.filter((c) => c.parent_id === categoryId) ?? []
+  const children = categories?.filter((c) => c.parentId === categoryId) ?? []
 
   return (
     <div className="p-4 sm:p-6">
@@ -30,7 +30,7 @@ export function FolderChildrenGrid({ categoryId }: FolderChildrenGridProps) {
           {children.map((child) => {
             const isFolder = child.type === 'folder'
             const childCount = isFolder
-              ? categories?.filter((c) => c.parent_id === child.id).length ?? 0
+              ? categories?.filter((c) => c.parentId === child.id).length ?? 0
               : 0
 
             return (

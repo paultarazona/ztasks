@@ -8,6 +8,7 @@ export const tasks = pgTable('tasks', {
   categoryId: integer('category_id').references(() => categories.id),
   title: text('title').notNull(),
   description: text('description'),
+  priority: text('priority').$type<'low' | 'medium' | 'high' | 'urgent'>(),
   statusId: integer('status_id').references(() => taskStatuses.id),
   position: integer('position'),
   dueDate: timestamp('due_date'),

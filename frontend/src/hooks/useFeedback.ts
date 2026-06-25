@@ -17,7 +17,7 @@ export function useFeedback() {
 
     setIsLoading(true)
     try {
-      await feedbackService.submitFeedback({ user_id: user.id, type, message: message.trim() })
+      await feedbackService.submitFeedback({ userId: user.id, type, message: message.trim() })
       return { error: null }
     } catch (err: unknown) {
       return { error: err instanceof Error ? err.message : 'Submission failed' }

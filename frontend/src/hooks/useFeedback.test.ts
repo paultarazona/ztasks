@@ -25,8 +25,8 @@ describe('useFeedback logic', () => {
       const message = 'My suggestion'
 
       if (user && message.trim()) {
-        expect({ user_id: user.id, type, message: message.trim() }).toEqual({
-          user_id: 'user-123',
+        expect({ userId: user.id, type, message: message.trim() }).toEqual({
+          userId: 'user-123',
           type: 'suggestion',
           message: 'My suggestion',
         })

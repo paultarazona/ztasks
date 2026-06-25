@@ -37,7 +37,7 @@ export async function getCategories(_userId: string): Promise<Category[]> {
 }
 
 export async function getTrashCategories(_userId: string): Promise<Category[]> {
-  return api<Category[]>('GET', '/categories?trash=true')
+  return api<Category[]>('GET', '/categories/trash')
 }
 
 export async function createCategory(input: CreateCategoryInput): Promise<Category> {
@@ -51,9 +51,15 @@ export async function updateCategory({ id, userId, ...body }: UpdateCategoryInpu
   return api<Category>('PATCH', `/categories/${encodeURIComponent(id)}`, body)
 }
 
-export async function deleteCategory({ ids }: DeleteCategoryInput): Promise<void> {
+export async function deleteCategory({ ids, rootId, deletedAs }: DeleteCategoryInput): Promise<void> {
   if (ids.length === 0) return
-  await Promise.all(ids.map((id) => api<void>('DELETE', `/categories/${encodeURIComponent(id)}`)))
+  const deletedRootId = rootId ? Number(rootId) : undefined
+  await Promise.all(ids.map((id) =>
+    api<void>('DELETE', `/categories/${encodeURIComponent(id)}`, {
+      deletedAs,
+      deletedRootId,
+    })
+  ))
 }
 
 export async function restoreCategory(ids: string[], _userId: string): Promise<void> {

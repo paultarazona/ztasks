@@ -75,7 +75,14 @@ categoriesRouter.patch('/:id/restore', async (c) => {
 
   const [updated] = await db
     .update(categories)
-    .set({ isDeleted: false, updatedAt: new Date() })
+    .set({
+      isDeleted: false,
+      deletedAt: null,
+      deletedRootId: null,
+      deletedAs: null,
+      deletedOriginalParentId: null,
+      updatedAt: new Date(),
+    })
     .where(and(eq(categories.id, id), eq(categories.userId, user.id)))
     .returning()
 
@@ -126,11 +133,17 @@ categoriesRouter.delete('/:id/permanent', async (c) => {
   return c.json({ success: true })
 })
 
-// DELETE /categories/:id — soft delete (sets is_deleted = true)
+// DELETE /categories/:id — soft delete (sets is_deleted = true) with optional trash metadata
 categoriesRouter.delete('/:id', async (c) => {
   const user = c.get('user')
   const id = parseInt(c.req.param('id'), 10)
   if (isNaN(id)) return c.json(badRequest('id must be a number'), 400)
+
+  const body = await c.req.json<{
+    deletedAs?: 'tree' | 'folder' | 'list'
+    deletedRootId?: number
+    deletedOriginalParentId?: number
+  }>().catch(() => ({}))
 
   const [existing] = await db
     .select()
@@ -143,7 +156,14 @@ categoriesRouter.delete('/:id', async (c) => {
 
   const [updated] = await db
     .update(categories)
-    .set({ isDeleted: true, updatedAt: new Date() })
+    .set({
+      isDeleted: true,
+      deletedAt: new Date(),
+      deletedAs: body.deletedAs ?? null,
+      deletedRootId: body.deletedRootId ?? null,
+      deletedOriginalParentId: body.deletedOriginalParentId ?? null,
+      updatedAt: new Date(),
+    })
     .where(and(eq(categories.id, id), eq(categories.userId, user.id)))
     .returning()
 

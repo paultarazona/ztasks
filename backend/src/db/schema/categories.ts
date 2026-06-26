@@ -9,6 +9,10 @@ export const categories = pgTable('categories', {
   type: text('type').$type<'folder' | 'list'>().default('list').notNull(),
   position: integer('position'),
   isDeleted: boolean('is_deleted').default(false),
+  deletedAt: timestamp('deleted_at'),
+  deletedRootId: integer('deleted_root_id'),
+  deletedAs: text('deleted_as').$type<'tree' | 'folder' | 'list'>(),
+  deletedOriginalParentId: integer('deleted_original_parent_id'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })

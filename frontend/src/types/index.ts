@@ -14,12 +14,11 @@ export interface Category {
 
 export interface TaskStatus {
   id: string
-  userId: string
   categoryId: string | null
   name: string
-  position: number
-  color: string
-  createdAt: string
+  position: number | null
+  color: string | null
+  isGlobal: boolean
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
